@@ -2,7 +2,7 @@ import os
 import sys
 
 # ---- ADAPTE ce chemin si ton dossier PythonAnywhere est différent ----
-PROJECT_DIR = '/home/Cedrick1833/portfolio'
+PROJECT_DIR = '/home/cedrick1833/portfolio'
 
 if PROJECT_DIR not in sys.path:
     sys.path.insert(0, PROJECT_DIR)
