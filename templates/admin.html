@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administration Portfolio</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background: #080a14;
+      color: #e2e8f0;
+      font-family: 'Space Grotesk', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(60% 40% at 12% 8%, rgba(139, 92, 246, 0.12), transparent 60%),
+        radial-gradient(50% 35% at 88% 15%, rgba(34, 211, 238, 0.09), transparent 60%),
+        #080a14;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 260px;
+      background: rgba(12, 15, 26, 0.97);
+      backdrop-filter: blur(12px);
+      border-right: 1px solid rgba(139, 92, 246, 0.15);
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+    }
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .sidebar-brand-icon {
+      width: 44px; height: 44px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #8b5cf6, #22d3ee);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.35);
+    }
+    .sidebar-brand h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0;
+      background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .sidebar-nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .sidebar-nav li { margin-bottom: 4px; }
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      color: #9aa3bf;
+      text-decoration: none;
+      font-size: 0.92rem;
+      transition: all 0.2s;
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      background: rgba(139, 92, 246, 0.1);
+      color: #e2e8f0;
+    }
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(34, 211, 238, 0.1));
+      border-left: 3px solid #8b5cf6;
+      box-shadow: 0 0 16px rgba(139, 92, 246, 0.15);
+    }
+    .sidebar-nav .badge {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      margin-left: auto;
+      box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
+    }
+    .sidebar-footer {
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sidebar-footer a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: #9aa3bf;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .sidebar-footer a:hover { background: rgba(255, 255, 255, 0.05); color: #e2e8f0; }
+    .sidebar-footer .btn-logout:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+    /* Main */
+    .main-content {
+      margin-left: 260px;
+      padding: 32px 40px;
+      min-height: 100vh;
+    }
+    .page-title {
+      font-size: clamp(1.4rem, 2.5vw, 1.7rem);
+      font-weight: 700;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+    .page-subtitle { color: #9aa3bf; font-size: 0.9rem; margin-bottom: 32px; }
+
+    /* Cards */
+    .admin-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .admin-card:hover {
+      border-color: rgba(139, 92, 246, 0.25);
+      box-shadow: 0 8px 40px rgba(139, 92, 246, 0.08);
+    }
+    .admin-card h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .admin-card h3 span {
+      font-size: 1.15rem;
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(34, 211, 238, 0.1));
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Stats row */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 20px 16px;
+      text-align: center;
+      transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+    }
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(139, 92, 246, 0.3);
+      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.12);
+    }
+    .stat-card .stat-num {
+      font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat-card .stat-label { color: #9aa3bf; font-size: 0.8rem; margin-top: 6px; }
+
+    /* Forms */
+    .form-control {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: 0.9rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-control:focus {
+      background: rgba(255, 255, 255, 0.04);
+      color: #e2e8f0;
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15), 0 0 14px rgba(139, 92, 246, 0.1);
+    }
+    .form-control::placeholder { color: #5a647e; }
+    .form-label { font-size: 0.8rem; color: #9aa3bf; font-weight: 500; margin-bottom: 6px; letter-spacing: 0.3px; }
+
+    /* Buttons */
+    .btn-admin {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 0 14px rgba(139, 92, 246, 0.25);
+    }
+    .btn-admin:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(139, 92, 246, 0.45); color: #fff; }
+    .btn-admin-outline {
+      background: transparent;
+      color: #a78bfa;
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-admin-outline:hover { background: rgba(139, 92, 246, 0.12); color: #c4b5fd; border-color: rgba(139, 92, 246, 0.6); }
+    .btn-danger-outline {
+      background: transparent;
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 6px 12px;
+      border-radius: 7px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-danger-outline:hover { background: rgba(239, 68, 68, 0.12); border-color: #ef4444; }
+    .btn-success-outline {
+      background: transparent;
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 6px 12px;
+      border-radius: 7px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-success-outline:hover { background: rgba(34, 197, 94, 0.12); border-color: #22c55e; }
+
+    /* File items */
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .file-item:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(139, 92, 246, 0.2); }
+    .file-preview { max-height: 36px; border-radius: 6px; object-fit: cover; margin-right: 12px; }
+
+    /* Cert item (for dynamic certs) */
+    .cert-item-admin {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 8px;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    }
+    .cert-item-admin:hover {
+      background: rgba(139, 92, 246, 0.05);
+      border-color: rgba(139, 92, 246, 0.2);
+      transform: translateX(2px);
+    }
+    .cert-status-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; }
+    .cert-status-badge.obtenue { color: #22c55e; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); }
+    .cert-status-badge.en_cours { color: #22d3ee; background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.3); }
+
+    /* Messages */
+    .msg-item { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 16px 18px; margin-bottom: 10px; transition: border-color 0.2s, background 0.2s; }
+    .msg-item:hover { background: rgba(255, 255, 255, 0.04); }
+    .msg-item.unread { border-left: 3px solid #8b5cf6; background: rgba(139, 92, 246, 0.04); }
+    .msg-item .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .msg-item .msg-sender { font-weight: 600; color: #e2e8f0; }
+    .msg-item .msg-email { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: #a78bfa; }
+    .msg-item .msg-date { font-size: 0.75rem; color: #5a647e; }
+    .msg-item .msg-body { color: #9aa3bf; font-size: 0.9rem; line-height: 1.5; }
+
+    /* Preview large */
+    .preview-large { max-height: 250px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); object-fit: contain; }
+    .preview-iframe { width: 100%; height: 350px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; }
+
+    /* Notification */
+    .toast-success {
+      position: fixed;
+      top: 24px; right: 24px;
+      background: #0c3a1a;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #22c55e;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s;
+      pointer-events: none;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+    .toast-success.show { opacity: 1; transform: translateY(0); }
+
+    /* Tabs */
+    .tab-list { display: flex; gap: 4px; margin-bottom: 24px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 4px; border: 1px solid rgba(255, 255, 255, 0.06); width: fit-content; }
+    .tab-btn { padding: 8px 18px; border-radius: 10px; border: none; background: transparent; color: #9aa3bf; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(34, 211, 238, 0.12)); color: #a78bfa; }
+    .tab-btn:hover:not(.active) { color: #e2e8f0; }
+    .tab-section { display: none; }
+    .tab-section.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 12px 16px;
+        border-right: none;
+        border-bottom: 1px solid rgba(139,92,246,0.15);
+      }
+      .sidebar-brand { margin-bottom: 4px; padding-bottom: 0; border-bottom: none; }
+      .sidebar-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        display: flex;
+        gap: 6px;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+      }
+      .sidebar-nav li { margin-bottom: 0; white-space: nowrap; flex: 1 1 calc(50% - 6px); min-width: 0; }
+      .sidebar-nav a { padding: 8px 10px; font-size: 0.8rem; width: 100%; }
+      .sidebar-nav a.active { border-left: none; border-bottom: 2px solid #8b5cf6; }
+      .sidebar-nav .badge { margin-left: auto; }
+      .sidebar-footer { flex-direction: row; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); gap: 8px; }
+      .sidebar-footer a { padding: 8px 12px; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .stats-row { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+      .file-item, .cert-item-admin { flex-wrap: wrap; gap: 12px; }
+      .file-item > div, .cert-item-admin > div { min-width: 0; }
+      .page-title { font-size: 1.3rem; }
+      .admin-card { padding: 16px; }
+      .preview-large { width: 100%; height: auto; }
+      .preview-iframe { height: 280px; }
+      .tab-list { width: 100%; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+    }
+
+    @media (max-width: 600px) {
+      .main-content { padding: 16px; }
+      .page-subtitle { margin-bottom: 20px; }
+      .sidebar { padding: 10px 12px; }
+      .sidebar-nav a { padding: 8px 10px; }
+      .admin-card { padding: 14px; }
+      .form-control, .form-control:focus { font-size: 16px; }
+      .form-label { font-size: 0.78rem; }
+      .btn-admin, .btn-admin-outline, .btn-danger-outline, .btn-success-outline { font-size: 0.85rem; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+      .stat-card { padding: 14px 10px; }
+      .tab-list { margin-bottom: 16px; }
+      .tab-btn { padding: 8px 12px; font-size: 0.8rem; white-space: nowrap; }
+      .msg-item .msg-header { flex-wrap: wrap; gap: 6px; }
+      .msg-item .msg-body { overflow-wrap: anywhere; }
+      .cert-item-admin .d-flex.align-items-center.gap-3 { flex-wrap: wrap; }
+      .cert-item-admin .d-flex.align-items-center.gap-3 div { min-width: 0; overflow-wrap: anywhere; }
+      .file-item .d-flex.align-items-center { min-width: 0; }
+      .file-item .d-flex.align-items-center div { min-width: 0; overflow-wrap: anywhere; }
+      .preview-iframe { height: 240px; border-radius: 8px; }
+      .toast-success { left: 12px; right: 12px; top: 12px; text-align: center; }
+    }
+
+    .edit-actions { display: flex; gap: 10px; margin-top: 6px; }
+
+    @media (max-width: 480px) {
+      .main-content { padding: 12px; }
+      .sidebar { padding: 8px 10px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .btn-admin { width: 100%; margin-bottom: 8px; }
+      .tab-section .row > div { margin-bottom: 4px; }
+      .edit-actions { display: flex; flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast-success" id="toast"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">CBK</div>
+      <h2>Admin Panel</h2>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="#" class="active" data-tab="tab-photo"><span>📷</span> Photo profil</a></li>
+      <li><a href="#" data-tab="tab-certs"><span>📁</span> Certificats fichiers</a></li>
+      <li><a href="#" data-tab="tab-certifications"><span>📜</span> Certifications <span class="badge">gérer</span></a></li>
+      <li><a href="#" data-tab="tab-realisations"><span>🚀</span> Réalisations</a></li>
+      <li><a href="#" data-tab="tab-formations"><span>🎓</span> Formations</a></li>
+      <li><a href="#" data-tab="tab-cv"><span>📄</span> CV</a></li>
+      <li><a href="#" data-tab="tab-messages"><span>✉️</span> Messages <span class="badge">{{ unread_count }}</span></a></li>
+      <li><a href="#" data-tab="tab-smtp"><span>⚙️</span> Email SMTP</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a href="/">🌐 Voir le site</a>
+      <a href="/admin/logout" class="btn-logout">🚪 Déconnexion</a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <h1 class="page-title">Bonjour, Cedrick</h1>
+    <p class="page-subtitle">Gérez votre portfolio depuis ici</p>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num">{{ certs|length }}</div>
+        <div class="stat-label">Certificats fichiers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">{{ certifications|length }}</div>
+        <div class="stat-label">Certifications listées</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">{{ realisations|length }}</div>
+        <div class="stat-label">Réalisations</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">{{ formations|length }}</div>
+        <div class="stat-label">Formations</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">{{ messages|length }}</div>
+        <div class="stat-label">Messages reçus</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">{{ unread_count }}</div>
+        <div class="stat-label">Non lus</div>
+      </div>
+    </div>
+
+    <!-- TAB: PHOTO -->
+    <div class="tab-section active" id="tab-photo">
+      <div class="admin-card">
+        <h3><span>📷</span> Photo de profil</h3>
+        <div class="row align-items-start">
+          <div class="col-md-4 text-center mb-3">
+            {% if photo and photo.url %}
+              <img src="{{ photo.url }}?t={{ range(100000)|random }}" alt="Photo" class="preview-large" />
+            {% else %}
+              <img src="https://ui-avatars.com/api/?name=CBK&background=8b5cf6&color=fff&size=200" alt="Avatar" class="preview-large" />
+            {% endif %}
+          </div>
+          <div class="col-md-8">
+            <form id="photo-form" enctype="multipart/form-data">
+              <div class="mb-3">
+                <label class="form-label">Nouvelle photo</label>
+                <input type="file" class="form-control" name="photo" accept="image/*" required />
+              </div>
+              <button type="submit" class="btn-admin">Mettre à jour</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CERTS FICHIERS -->
+    <div class="tab-section" id="tab-certs">
+      <div class="admin-card">
+        <h3><span>📁</span> Certificats fichiers (PDF / Images)</h3>
+        <form id="cert-form" enctype="multipart/form-data" class="mb-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-9">
+              <label class="form-label">Sélectionner un fichier</label>
+              <input type="file" class="form-control" name="cert" accept="image/*,.pdf" required />
+            </div>
+            <div class="col-md-3">
+              <button type="submit" class="btn-admin w-100">Ajouter</button>
+            </div>
+          </div>
+        </form>
+        <div id="certs-file-list">
+          {% for cert in certs %}
+          <div class="file-item" id="cert-{{ cert.filename }}">
+            <div class="d-flex align-items-center">
+              {% if cert.filename.endswith('.pdf') %}
+                <span style="font-size: 1.5rem; margin-right: 12px;">📄</span>
+              {% else %}
+                <img src="{{ cert.url }}" alt="Cert" class="file-preview" />
+              {% endif %}
+              <div>
+                <div style="font-weight: 500; font-size: 0.9rem;">{{ cert.original_name or cert.filename }}</div>
+                <div style="font-size: 0.75rem; color: #5a647e; font-family: 'JetBrains Mono', monospace;">{{ cert.filename }}</div>
+              </div>
+            </div>
+            <button class="btn-danger-outline" onclick="deleteCertFile('{{ cert.filename }}')">Supprimer</button>
+          </div>
+          {% endfor %}
+          {% if not certs %}
+          <p style="color: #5a647e; font-size: 0.9rem; text-align: center; padding: 20px;">Aucun fichier certificat uploadé.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CERTIFICATIONS -->
+    <div class="tab-section" id="tab-certifications">
+      <div class="admin-card">
+        <h3><span>📜</span> Ajouter une certification</h3>
+        <form id="add-cert-form">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Titre</label>
+              <input type="text" class="form-control" id="cert-title" placeholder="ex: CCNA 1, 2, 3" required />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Description</label>
+              <input type="text" class="form-control" id="cert-desc" placeholder="ex: Cisco Certified Network Associate" required />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Statut</label>
+              <select class="form-control" id="cert-status">
+                <option value="obtenue">Obtenue</option>
+                <option value="en_cours">En cours</option>
+              </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn-admin w-100">Ajouter</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-card">
+        <h3><span>📋</span> Certifications existantes</h3>
+        <div id="certifications-list">
+          {% for cert in certifications %}
+          <div class="cert-item-admin" id="cert-id-{{ cert.id }}">
+            <div class="d-flex align-items-center gap-3">
+              <span class="cert-status-badge {{ cert.status }}">{{ 'Obtenue' if cert.status == 'obtenue' else 'En cours' }}</span>
+              <div>
+                <div style="font-weight: 600; font-size: 0.95rem;">{{ cert.title }}</div>
+                <div style="font-size: 0.82rem; color: #9aa3bf;">{{ cert.description }}</div>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn-admin-outline" onclick="beginEditCert({{ cert.id }})">Modifier</button>
+              <button class="btn-danger-outline" onclick="deleteCertification({{ cert.id }})">Supprimer</button>
+            </div>
+          </div>
+          {% endfor %}
+          {% if not certifications %}
+          <p style="color: #5a647e; font-size: 0.9rem; text-align: center; padding: 20px;">Aucune certification ajoutée.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: RÉALISATIONS -->
+    <div class="tab-section" id="tab-realisations">
+      <div class="admin-card">
+        <h3><span>➕</span> Ajouter une réalisation</h3>
+        <form id="add-rel-form">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Titre</label>
+              <input type="text" class="form-control" id="rel-title" placeholder="ex: Plateforme de gestion d'école" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Image URL</label>
+              <input type="text" class="form-control" id="rel-image" placeholder="ex: /static/img/project-microservices.svg" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="rel-desc" rows="3" placeholder="Décrivez la réalisation..." required></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Lien code source</label>
+              <input type="url" class="form-control" id="rel-code" placeholder="https://github.com/..." />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Lien démo live</label>
+              <input type="url" class="form-control" id="rel-demo" placeholder="https://..." />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Tags (séparés par des virgules)</label>
+              <input type="text" class="form-control" id="rel-tags" placeholder="ex: Python, Flask, Docker" />
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn-admin">Ajouter la réalisation</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-card">
+        <h3><span>🚀</span> Réalisations existantes</h3>
+        <div id="realisations-list">
+          {% for rel in realisations %}
+          <div class="cert-item-admin" id="rel-id-{{ rel.id }}">
+            <div class="d-flex align-items-center gap-3">
+              <div>
+                <div style="font-weight: 600; font-size: 0.95rem;">{{ rel.title }}</div>
+                <div style="font-size: 0.82rem; color: #9aa3bf;">{{ rel.tags or 'Aucun tag' }}</div>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn-admin-outline" onclick="beginEditRel({{ rel.id }})">Modifier</button>
+              <button class="btn-danger-outline" onclick="deleteRealisation({{ rel.id }})">Supprimer</button>
+            </div>
+          </div>
+          {% endfor %}
+          {% if not realisations %}
+          <p style="color: #5a647e; font-size: 0.9rem; text-align: center; padding: 20px;">Aucune réalisation ajoutée.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: FORMATIONS -->
+    <div class="tab-section" id="tab-formations">
+      <div class="admin-card">
+        <h3><span>➕</span> Ajouter une formation</h3>
+        <form id="add-form-form">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Titre</label>
+              <input type="text" class="form-control" id="form-title" placeholder="ex: Master Cybersécurité" required />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Statut</label>
+              <select class="form-control" id="form-status">
+                <option value="en_cours">En cours</option>
+                <option value="terminee">Terminée</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Institution</label>
+              <input type="text" class="form-control" id="form-institution" placeholder="ex: Unicaf University" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="form-desc" rows="3" placeholder="Décrivez la formation..." required></textarea>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn-admin">Ajouter la formation</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-card">
+        <h3><span>🎓</span> Formations existantes</h3>
+        <div id="formations-list">
+          {% for form in formations %}
+          <div class="cert-item-admin" id="form-id-{{ form.id }}">
+            <div class="d-flex align-items-center gap-3">
+              <span class="cert-status-badge {{ 'obtenue' if form.status == 'terminee' else 'en_cours' }}">{{ 'Terminée' if form.status == 'terminee' else 'En cours' }}</span>
+              <div>
+                <div style="font-weight: 600; font-size: 0.95rem;">{{ form.title }}</div>
+                <div style="font-size: 0.82rem; color: #9aa3bf;">{{ form.institution or '' }}</div>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn-admin-outline" onclick="beginEditForm({{ form.id }})">Modifier</button>
+              <button class="btn-danger-outline" onclick="deleteFormation({{ form.id }})">Supprimer</button>
+            </div>
+          </div>
+          {% endfor %}
+          {% if not formations %}
+          <p style="color: #5a647e; font-size: 0.9rem; text-align: center; padding: 20px;">Aucune formation ajoutée.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CV -->
+    <div class="tab-section" id="tab-cv">
+      <div class="admin-card">
+        <h3><span>📄</span> CV (PDF / Image)</h3>
+        {% if cv and cv.url %}
+        <div class="mb-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span style="font-weight: 500;">CV actuel : <strong>{{ cv.filename }}</strong></span>
+            <button class="btn-danger-outline" onclick="deleteCV()">Supprimer le CV</button>
+          </div>
+          {% if cv.filename.endswith('.pdf') %}
+            <iframe src="{{ cv.url }}" class="preview-iframe"></iframe>
+          {% else %}
+            <img src="{{ cv.url }}" class="preview-large" style="max-height: 350px;" alt="CV actuel" />
+          {% endif %}
+        </div>
+        {% else %}
+        <p style="color: #5a647e; margin-bottom: 16px;">Aucun CV uploadé.</p>
+        {% endif %}
+
+        <form id="cv-form" enctype="multipart/form-data">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-9">
+              <label class="form-label">{{ 'Remplacer le CV' if cv else 'Uploader le CV' }}</label>
+              <input type="file" class="form-control" name="cv" accept="image/*,.pdf" required />
+            </div>
+            <div class="col-md-3">
+              <button type="submit" class="btn-admin w-100">{{ 'Remplacer' if cv else 'Uploader' }}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB: MESSAGES -->
+    <div class="tab-section" id="tab-messages">
+      <div class="admin-card">
+        <h3><span>✉️</span> Messages reçus ({{ messages|length }})</h3>
+        <div id="messages-list">
+          {% for msg in messages %}
+          <div class="msg-item {{ 'unread' if not msg.is_read }}" id="msg-{{ msg.id }}">
+            <div class="msg-header">
+              <div>
+                <span class="msg-sender">{{ msg.nom }}</span>
+                <span class="msg-email">&lt;{{ msg.email }}&gt;</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="msg-date">{{ msg.created_at[:16] }}</span>
+                {% if not msg.is_read %}
+                  <button class="btn-success-outline" onclick="markRead({{ msg.id }})">Marquer lu</button>
+                {% endif %}
+                <button class="btn-danger-outline" onclick="deleteMsg({{ msg.id }})">Supprimer</button>
+              </div>
+            </div>
+            <div class="msg-body">{{ msg.message }}</div>
+          </div>
+          {% endfor %}
+          {% if not messages %}
+          <p style="color: #5a647e; font-size: 0.9rem; text-align: center; padding: 40px;">Aucun message pour le moment.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: SMTP -->
+    <div class="tab-section" id="tab-smtp">
+      <div class="admin-card">
+        <h3><span>⚙️</span> Configuration email SMTP (Gmail)</h3>
+        <p style="font-size: 0.85rem; color: #9aa3bf; margin-bottom: 20px;">
+          Configurez votre adresse Gmail et un <strong>mot de passe d'application</strong> pour que les messages du formulaire de contact arrivent dans votre boîte email.<br>
+          <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color: #8b5cf6;">Générer un mot de passe d'application ici →</a>
+        </p>
+        <form id="smtp-form">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Email Gmail</label>
+              <input type="email" class="form-control" id="smtp-email" placeholder="cedricktemple481@gmail.com" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Mot de passe d'application</label>
+              <input type="password" class="form-control" id="smtp-pass" placeholder="xxxx xxxx xxxx xxxx" />
+            </div>
+          </div>
+          <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
+            <button type="submit" class="btn-admin">Enregistrer la configuration</button>
+            <button type="button" class="btn-admin-outline" id="smtp-test-btn">Tester la connexion</button>
+            {% if smtp_configured %}
+              <span style="color: #22c55e; font-size: 0.85rem;">✅ Configuré</span>
+            {% else %}
+              <span style="color: #ef4444; font-size: 0.85rem;">❌ Non configuré</span>
+            {% endif %}
+            <span id="smtp-test-result" style="font-size: 0.85rem;"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content" style="background: #0c0f1a; color: #e2e8f0; border: 1px solid rgba(139,92,246,0.15);">
+        <div class="modal-header" style="border-color: rgba(255,255,255,0.06);">
+          <h5 class="modal-title" id="editModalTitle">Modifier</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="editModalBody">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toast
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // Sidebar tabs
+    document.querySelectorAll('.sidebar-nav a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tabId = link.dataset.tab;
+        if (!tabId) return;
+        document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+
+    // PHOTO
+    document.getElementById('photo-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch('/admin/api/upload/photo', { method: 'POST', body: new FormData(e.target) });
+      if (res.ok) { showToast('Photo mise à jour !'); setTimeout(() => location.reload(), 600); }
+    });
+
+    // CERT FICHIERS
+    document.getElementById('cert-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch('/admin/api/upload/cert', { method: 'POST', body: new FormData(e.target) });
+      if (res.ok) { showToast('Certificat ajouté !'); setTimeout(() => location.reload(), 600); }
+    });
+
+    async function deleteCertFile(filename) {
+      if (!confirm('Supprimer ce fichier ?')) return;
+      const res = await fetch('/admin/api/cert/' + filename, { method: 'DELETE' });
+      if (res.ok) { document.getElementById('cert-' + filename).remove(); showToast('Fichier supprimé.'); }
+    }
+
+    // CERTIFICATIONS
+    document.getElementById('add-cert-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        title: document.getElementById('cert-title').value.trim(),
+        description: document.getElementById('cert-desc').value.trim(),
+        status: document.getElementById('cert-status').value
+      };
+      const res = await fetch('/admin/api/certifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) { showToast('Certification ajoutée !'); setTimeout(() => location.reload(), 600); }
+    });
+
+    async function deleteCertification(id) {
+      if (!confirm('Supprimer cette certification ?')) return;
+      const res = await fetch('/admin/api/certifications/' + id, { method: 'DELETE' });
+      if (res.ok) { document.getElementById('cert-id-' + id).remove(); showToast('Certification supprimée.'); }
+    }
+
+    // CV
+    document.getElementById('cv-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch('/admin/api/upload/cv', { method: 'POST', body: new FormData(e.target) });
+      if (res.ok) { showToast('CV mis à jour !'); setTimeout(() => location.reload(), 600); }
+    });
+
+    async function deleteCV() {
+      if (!confirm('Supprimer le CV ?')) return;
+      const res = await fetch('/admin/api/cv', { method: 'DELETE' });
+      if (res.ok) { showToast('CV supprimé.'); setTimeout(() => location.reload(), 600); }
+    }
+
+    // MESSAGES
+    async function markRead(id) {
+      await fetch('/admin/api/messages/' + id + '/read', { method: 'POST' });
+      document.getElementById('msg-' + id).classList.remove('unread');
+    }
+
+    async function deleteMsg(id) {
+      if (!confirm('Supprimer ce message ?')) return;
+      const res = await fetch('/admin/api/messages/' + id, { method: 'DELETE' });
+      if (res.ok) { document.getElementById('msg-' + id).remove(); showToast('Message supprimé.'); }
+    }
+
+    // ===== DONNÉES POUR ÉDITION =====
+    const CERTIFICATIONS_DATA = {{ certifications | tojson }};
+    const REALISATIONS_DATA = {{ realisations | tojson }};
+    const FORMATIONS_DATA = {{ formations | tojson }};
+
+    // ===== MODAL GÉNÉRIQUE =====
+    let editModal = null;
+    try { editModal = new bootstrap.Modal(document.getElementById('editModal')); } catch (e) { editModal = null; }
+    const editModalTitle = document.getElementById('editModalTitle');
+    const editModalBody = document.getElementById('editModalBody');
+
+    function openEditModal(title, bodyHtml) {
+      editModalTitle.textContent = title;
+      editModalBody.innerHTML = bodyHtml;
+      const el = document.getElementById('editModal');
+      if (editModal) {
+        editModal.show();
+      } else {
+        el.classList.add('show');
+        el.style.display = 'block';
+        document.body.classList.add('modal-open');
+      }
+    }
+
+    function closeEditModal() {
+      const el = document.getElementById('editModal');
+      if (editModal) {
+        editModal.hide();
+      } else {
+        el.classList.remove('show');
+        el.style.display = 'none';
+        document.body.classList.remove('modal-open');
+      }
+    }
+
+    document.querySelectorAll('#editModal [data-bs-dismiss]').forEach((btn) => {
+      btn.addEventListener('click', closeEditModal);
+    });
+
+    function field(label, id, value, type = 'text', options = null) {
+      const val = value == null ? '' : value;
+      if (type === 'select') {
+        const opts = options.map((o) => `<option value="${o[0]}" ${String(val) === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('');
+        return `<div class="mb-3"><label class="form-label">${label}</label><select class="form-control" id="${id}">${opts}</select></div>`;
+      }
+      return `<div class="mb-3"><label class="form-label">${label}</label><input type="${type}" class="form-control" id="${id}" value="${val.replace(/"/g, '&quot;')}" /></div>`;
+    }
+
+    function textArea(label, id, value) {
+      return `<div class="mb-3"><label class="form-label">${label}</label><textarea class="form-control" id="${id}" rows="3">${value == null ? '' : value}</textarea></div>`;
+    }
+
+    // ===== CERTIFICATIONS : modifier =====
+    function beginEditCert(id) {
+      const c = CERTIFICATIONS_DATA.find((x) => x.id === id);
+      if (!c) return;
+      const html =
+        field('Titre', 'ec-title', c.title) +
+        textArea('Description', 'ec-desc', c.description) +
+        field('Statut', 'ec-status', c.status, 'select', [['obtenue', 'Obtenue'], ['en_cours', 'En cours']]) +
+        `<div class="edit-actions"><button class="btn-admin w-100" onclick="saveEditCert(${id})">Enregistrer</button></div>`;
+      openEditModal('Modifier la certification', html);
+    }
+
+    async function saveEditCert(id) {
+      const data = {
+        title: document.getElementById('ec-title').value.trim(),
+        description: document.getElementById('ec-desc').value.trim(),
+        status: document.getElementById('ec-status').value
+      };
+      const res = await fetch('/admin/api/certifications/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) { showToast('Certification modifiée !'); setTimeout(() => location.reload(), 600); }
+    }
+
+    // ===== RÉALISATIONS =====
+    document.getElementById('add-rel-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        title: document.getElementById('rel-title').value.trim(),
+        description: document.getElementById('rel-desc').value.trim(),
+        image: document.getElementById('rel-image').value.trim(),
+        code_url: document.getElementById('rel-code').value.trim(),
+        demo_url: document.getElementById('rel-demo').value.trim(),
+        tags: document.getElementById('rel-tags').value.trim()
+      };
+      const res = await fetch('/admin/api/realisations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) { showToast('Réalisation ajoutée !'); setTimeout(() => location.reload(), 600); }
+    });
+
+    function beginEditRel(id) {
+      const r = REALISATIONS_DATA.find((x) => x.id === id);
+      if (!r) return;
+      const html =
+        field('Titre', 'er-title', r.title) +
+        field('Image URL', 'er-image', r.image) +
+        textArea('Description', 'er-desc', r.description) +
+        field('Lien code source', 'er-code', r.code_url) +
+        field('Lien démo live', 'er-demo', r.demo_url) +
+        field('Tags (virgules)', 'er-tags', r.tags) +
+        `<div class="edit-actions"><button class="btn-admin w-100" onclick="saveEditRel(${id})">Enregistrer</button></div>`;
+      openEditModal('Modifier la réalisation', html);
+    }
+
+    async function saveEditRel(id) {
+      const data = {
+        title: document.getElementById('er-title').value.trim(),
+        description: document.getElementById('er-desc').value.trim(),
+        image: document.getElementById('er-image').value.trim(),
+        code_url: document.getElementById('er-code').value.trim(),
+        demo_url: document.getElementById('er-demo').value.trim(),
+        tags: document.getElementById('er-tags').value.trim()
+      };
+      const res = await fetch('/admin/api/realisations/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) { showToast('Réalisation modifiée !'); setTimeout(() => location.reload(), 600); }
+    }
+
+    async function deleteRealisation(id) {
+      if (!confirm('Supprimer cette réalisation ?')) return;
+      const res = await fetch('/admin/api/realisations/' + id, { method: 'DELETE' });
+      if (res.ok) { document.getElementById('rel-id-' + id).remove(); showToast('Réalisation supprimée.'); }
+    }
+
+    // ===== FORMATIONS =====
+    document.getElementById('add-form-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        title: document.getElementById('form-title').value.trim(),
+        description: document.getElementById('form-desc').value.trim(),
+        institution: document.getElementById('form-institution').value.trim(),
+        status: document.getElementById('form-status').value
+      };
+      const res = await fetch('/admin/api/formations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) { showToast('Formation ajoutée !'); setTimeout(() => location.reload(), 600); }
+    });
+
+    function beginEditForm(id) {
+      const f = FORMATIONS_DATA.find((x) => x.id === id);
+      if (!f) return;
+      const html =
+        field('Titre', 'ef-title', f.title) +
+        field('Institution', 'ef-institution', f.institution) +
+        field('Statut', 'ef-status', f.status, 'select', [['en_cours', 'En cours'], ['terminee', 'Terminée']]) +
+        textArea('Description', 'ef-desc', f.description) +
+        `<div class="edit-actions"><button class="btn-admin w-100" onclick="saveEditForm(${id})">Enregistrer</button></div>`;
+      openEditModal('Modifier la formation', html);
+    }
+
+    async function saveEditForm(id) {
+      const data = {
+        title: document.getElementById('ef-title').value.trim(),
+        description: document.getElementById('ef-desc').value.trim(),
+        institution: document.getElementById('ef-institution').value.trim(),
+        status: document.getElementById('ef-status').value
+      };
+      const res = await fetch('/admin/api/formations/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) { showToast('Formation modifiée !'); setTimeout(() => location.reload(), 600); }
+    }
+
+    async function deleteFormation(id) {
+      if (!confirm('Supprimer cette formation ?')) return;
+      const res = await fetch('/admin/api/formations/' + id, { method: 'DELETE' });
+      if (res.ok) { document.getElementById('form-id-' + id).remove(); showToast('Formation supprimée.'); }
+    }
+
+    // SMTP
+    document.getElementById('smtp-email').value = 'cedricktemple481@gmail.com';
+    document.getElementById('smtp-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        smtp_email: document.getElementById('smtp-email').value.trim(),
+        smtp_app_password: document.getElementById('smtp-pass').value.trim()
+      };
+      const res = await fetch('/admin/api/smtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) { showToast('Configuration SMTP enregistrée !'); }
+    });
+
+    document.getElementById('smtp-test-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('smtp-test-btn');
+      const result = document.getElementById('smtp-test-result');
+      btn.disabled = true;
+      btn.textContent = 'Test en cours...';
+      result.textContent = '';
+      try {
+        const res = await fetch('/admin/api/smtp/test', { method: 'POST' });
+        const data = await res.json();
+        result.style.color = data.success ? '#22c55e' : '#ef4444';
+        result.textContent = data.message || (data.success ? 'Succès' : 'Échec');
+      } catch {
+        result.style.color = '#ef4444';
+        result.textContent = 'Erreur lors du test.';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Tester la connexion';
+    });
+  </script>
+</body>
+</html>

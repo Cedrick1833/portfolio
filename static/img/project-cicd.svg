@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#10162b"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#22d3ee" opacity="0.14"/>
+    </pattern>
+    <style>
+      .node { fill: #10162b; stroke: url(#lg); stroke-width: 1.5; }
+      .flow { stroke: url(#line); stroke-width: 2.5; stroke-dasharray: 8 6; animation: flow 1.4s linear infinite; opacity: .9; }
+      .head { fill: #ec4899; }
+      @keyframes flow { to { stroke-dashoffset: -28; } }
+      text { font-family: monospace; fill: #e8ecf8; font-size: 13px; letter-spacing: 1px; }
+      .sub { fill: #9aa3bf; font-size: 11px; }
+      .titre { fill: #22d3ee; font-size: 15px; letter-spacing: 4px; }
+      .lock { fill: none; stroke: #a5e844; stroke-width: 3; }
+    </style>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <rect width="800" height="450" fill="url(#dots)"/>
+  <text x="400" y="40" text-anchor="middle" class="titre">PIPELINE CI/CD SECURISE</text>
+  <text x="400" y="60" text-anchor="middle" class="sub">Security as Code - chaque commit est scanne avant deploiement</text>
+
+  <line class="flow" x1="155" y1="225" x2="185" y2="225"/>
+  <line class="flow" x1="315" y1="225" x2="345" y2="225"/>
+  <line class="flow" x1="475" y1="225" x2="505" y2="225"/>
+  <line class="flow" x1="635" y1="225" x2="665" y2="225"/>
+  <polygon class="head" points="182,219 192,225 182,231"/>
+  <polygon class="head" points="342,219 352,225 342,231"/>
+  <polygon class="head" points="502,219 512,225 502,231"/>
+  <polygon class="head" points="662,219 672,225 662,231"/>
+
+  <rect class="node" x="45" y="195" width="110" height="60" rx="12"/>
+  <text x="100" y="218" text-anchor="middle">CODE</text>
+  <text x="100" y="238" text-anchor="middle" class="sub">git push</text>
+  <rect class="node" x="205" y="195" width="110" height="60" rx="12"/>
+  <text x="260" y="218" text-anchor="middle">BUILD</text>
+  <text x="260" y="238" text-anchor="middle" class="sub">Docker</text>
+  <rect class="node" x="365" y="195" width="110" height="60" rx="12"/>
+  <text x="420" y="218" text-anchor="middle">TEST</text>
+  <text x="420" y="238" text-anchor="middle" class="sub">pytest</text>
+  <rect class="node" x="525" y="195" width="110" height="60" rx="12"/>
+  <text x="580" y="218" text-anchor="middle">SCAN</text>
+  <text x="580" y="238" text-anchor="middle" class="sub">vulnerabilites</text>
+  <rect class="node" x="685" y="195" width="110" height="60" rx="12"/>
+  <text x="740" y="218" text-anchor="middle">DEPLOY</text>
+  <text x="740" y="238" text-anchor="middle" class="sub">Kubernetes</text>
+
+  <rect x="525" y="170" width="14" height="14" rx="3" class="lock"/>
+  <path class="lock" d="M529 170 V163 a5 5 0 0 1 10 0 V170"/>
+
+  <text x="400" y="330" text-anchor="middle" class="sub">analyse de vulnerabilites . scan d'images . secrets gestes . pipeline refractaire aux artefacts non conformes</text>
+
+  <rect class="node" x="250" y="360" width="300" height="46" rx="12"/>
+  <text x="400" y="388" text-anchor="middle" font-size="12">GITHUB ACTIONS . INFRASTRUCTURE AS CODE</text>
+</svg>

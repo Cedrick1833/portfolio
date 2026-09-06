@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#10162b"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#8b5cf6" opacity="0.14"/>
+    </pattern>
+    <style>
+      text { font-family: monospace; }
+      .titre { fill: #22d3ee; font-size: 15px; letter-spacing: 4px; }
+      .sub { fill: #9aa3bf; font-size: 11px; letter-spacing: 1px; }
+      .kw { fill: #ec4899; }
+      .str { fill: #a5e844; }
+      .cmt { fill: #5a647e; }
+      .fn { fill: #22d3ee; }
+      .code { fill: #e8ecf8; font-size: 12px; }
+      .cursor { fill: #22d3ee; animation: blink 1s step-end infinite; }
+      @keyframes blink { 50% { opacity: 0; } }
+    </style>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <rect width="800" height="450" fill="url(#dots)"/>
+  <text x="400" y="40" text-anchor="middle" class="titre">INFRASTRUCTURE AS CODE</text>
+  <text x="400" y="60" text-anchor="middle" class="sub">infrastructure versionnee, reproductible, declarative</text>
+
+  <rect x="60" y="80" width="680" height="330" rx="14" fill="#0d1226" stroke="#1e2440" stroke-width="1.5"/>
+  <path d="M60 120 L740 120" stroke="#1e2440" stroke-width="1.5"/>
+  <circle cx="90" cy="100" r="6" fill="#ff5f57"/>
+  <circle cx="112" cy="100" r="6" fill="#febc2e"/>
+  <circle cx="134" cy="100" r="6" fill="#28c840"/>
+  <text x="400" y="105" text-anchor="middle" class="sub">main.tf — Terraform . Kubernetes</text>
+
+  <text x="90" y="148" class="cmt"># IaC : infrastructure reproductible et versionnee</text>
+  <text x="90" y="170"><tspan class="kw">provider</tspan> <tspan class="str">"kubernetes"</tspan> <tspan class="code">{</tspan></text>
+  <text x="90" y="192" class="code">  config_path = <tspan class="str">"~/.kube/config"</tspan></text>
+  <text x="90" y="214" class="code">}</text>
+  <text x="90" y="240"><tspan class="kw">resource</tspan> <tspan class="str">"kubernetes_deployment"</tspan> <tspan class="str">"api"</tspan> <tspan class="code">{</tspan></text>
+  <text x="90" y="262" class="code">  metadata {</text>
+  <text x="90" y="284" class="code">    name = <tspan class="str">"api-gateway"</tspan></text>
+  <text x="90" y="306" class="code">  }</text>
+  <text x="90" y="328" class="code">  spec {</text>
+  <text x="90" y="350" class="code">    replicas = 3</text>
+  <text x="90" y="372" class="code">    strategy = <tspan class="str">"rolling-update"</tspan></text>
+  <text x="90" y="394" class="code">  }</text>
+  <text x="90" y="416" class="code">}</text>
+  <rect x="286" y="410" width="10" height="16" class="cursor"/>
+</svg>

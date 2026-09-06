@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#10162b"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#ec4899" opacity="0.14"/>
+    </pattern>
+    <style>
+      text { font-family: monospace; }
+      .titre { fill: #22d3ee; font-size: 15px; letter-spacing: 4px; }
+      .sub { fill: #9aa3bf; font-size: 11px; letter-spacing: 1px; }
+      .ring { fill: none; stroke: #8b5cf6; stroke-width: 1; opacity: .35; }
+      .trace { fill: none; stroke: #22d3ee; stroke-width: 1.5; opacity: .6; stroke-dasharray: 6 6; animation: dash 2s linear infinite; }
+      @keyframes dash { to { stroke-dashoffset: -24; } }
+      .dot { fill: #ec4899; }
+      .badge { fill: #0f172a; stroke: #a5e844; stroke-width: 1.5; }
+      .badgeText { fill: #a5e844; font-size: 11px; letter-spacing: 1px; }
+    </style>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <rect width="800" height="450" fill="url(#dots)"/>
+  <text x="400" y="40" text-anchor="middle" class="titre">// SECURITY BY DESIGN</text>
+  <text x="400" y="60" text-anchor="middle" class="sub">la securite integree des la conception - pas ajoutee apres</text>
+
+  <circle class="ring" cx="400" cy="230" r="150"/>
+  <circle class="ring" cx="400" cy="230" r="110"/>
+  <circle class="ring" cx="400" cy="230" r="190" opacity="0.18"/>
+
+  <path class="trace" d="M150 100 L300 160"/>
+  <path class="trace" d="M650 100 L500 160"/>
+  <path class="trace" d="M150 360 L300 300"/>
+  <path class="trace" d="M650 360 L500 300"/>
+  <circle class="dot" cx="150" cy="100" r="4"/>
+  <circle class="dot" cx="650" cy="100" r="4"/>
+  <circle class="dot" cx="150" cy="360" r="4"/>
+  <circle class="dot" cx="650" cy="360" r="4"/>
+
+  <path d="M400 105 L515 158 V245 C515 320 465 375 400 395 C335 375 285 320 285 245 V158 Z"
+        fill="#10162b" stroke="url(#lg)" stroke-width="3" filter="url(#glow)" opacity="0.9"/>
+  <path d="M400 105 L515 158 V245 C515 320 465 375 400 395 C335 375 285 320 285 245 V158 Z"
+        fill="url(#lg)" opacity="0.12"/>
+
+  <rect x="368" y="250" width="64" height="50" rx="10" fill="#10162b" stroke="#e8ecf8" stroke-width="2.5"/>
+  <path d="M382 250 V222 a18 18 0 0 1 36 0 V250" fill="none" stroke="#e8ecf8" stroke-width="2.5"/>
+  <circle cx="400" cy="272" r="7" fill="url(#lg)"/>
+  <rect x="352" y="220" width="96" height="16" rx="8" fill="url(#lg)" opacity="0.85"/>
+  <text x="400" y="232" text-anchor="middle" fill="#0a0e1a" font-size="10" font-weight="bold">SECURISE</text>
+
+  <rect class="badge" x="240" y="410" width="86" height="26" rx="13"/>
+  <text x="283" y="427" text-anchor="middle" class="badgeText">OWASP</text>
+  <rect class="badge" x="337" y="410" width="70" height="26" rx="13"/>
+  <text x="372" y="427" text-anchor="middle" class="badgeText">JWT</text>
+  <rect class="badge" x="418" y="410" width="120" height="26" rx="13"/>
+  <text x="478" y="427" text-anchor="middle" class="badgeText">CHIFFREMENT</text>
+  <rect class="badge" x="549" y="410" width="36" height="26" rx="13"/>
+  <text x="567" y="427" text-anchor="middle" class="badgeText">TLS</text>
+</svg>

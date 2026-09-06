@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cedrick B. Kabengele | Ingénieur DevSecOps</title>
+  <meta name="description" content="Portfolio de Cedrick B. Kabengele — Ingénieur génie informatique, DevSecOps, réseaux, cybersécurité. Microservices, Docker, Kubernetes, CI/CD sécurisé." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css?v=2" />
+</head>
+<body>
+
+  <!-- Particules de fond -->
+  <canvas id="particles"></canvas>
+
+  <!-- Barre de progression de scroll -->
+  <div id="scroll-progress"></div>
+
+  <!-- Navigation -->
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="#accueil" class="logo">CEDRICK B KABENGELE</a>
+      <nav class="nav-links" id="nav-links">
+        <a href="#accueil" class="nav-link active">Accueil</a>
+        <a href="#apropos" class="nav-link">À propos</a>
+        <a href="#competences" class="nav-link">Compétences</a>
+        <a href="#certifications" class="nav-link">Certifications</a>
+        <a href="#projets" class="nav-link">Projets</a>
+        <a href="#contact" class="nav-link">Contact</a>
+        <a href="/admin" class="nav-link nav-admin" title="Espace administrateur" aria-label="Espace administrateur">👤</a>
+      </nav>
+      <button class="burger" id="burger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section id="accueil" class="hero">
+      <div class="hero-glow hero-glow-1"></div>
+      <div class="hero-glow hero-glow-2"></div>
+        <div class="hero-content reveal">
+        <h1 class="hero-name">
+          <span class="gradient-text">Cedrick B. Kabengele</span>
+        </h1>
+        <h2 class="hero-role"><span class="typed"></span><span class="cursor">|</span></h2>
+        <p class="hero-desc">
+          Ingénieur en génie informatique, je conçois des
+          <span class="accent">architectures microservices sécurisées</span> :
+          la sécurité intégrée dès la conception, du réseau jusqu'au code.
+        </p>
+        <div class="hero-actions d-flex flex-wrap justify-content-center gap-3">
+          <a href="#projets" class="btn btn-primary">Voir mes projets</a>
+          <a href="#contact" class="btn btn-ghost">Me contacter</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-value"><span class="stat-num" data-count="{{ certifications_count }}">0</span><span class="stat-plus">+</span></div>
+            <span class="stat-label">certifications réseau & sécurité</span>
+          </div>
+          <div class="stat">
+            <div class="stat-value"><span class="stat-num" data-count="{{ realisations_count }}">0</span><span class="stat-plus">+</span></div>
+            <span class="stat-label">projets réalisés</span>
+          </div>
+          <div class="stat">
+            <div class="stat-value"><span class="stat-num" data-count="{{ formations_count }}">0</span><span class="stat-plus">+</span></div>
+            <span class="stat-label">formations suivies</span>
+          </div>
+        </div>
+      </div>
+      <a href="#apropos" class="scroll-hint" aria-label="Descendre">
+        <span class="mouse"><span class="wheel"></span></span>
+      </a>
+    </section>
+
+    <!-- À PROPOS -->
+    <section id="apropos" class="section">
+      <div class="section-head reveal">
+        <h2 class="section-title">Qui suis-je, <span class="gradient-text">vraiment</span></h2>
+      </div>
+      <div class="row g-4 align-items-center">
+        <div class="col-lg-4">
+          <div class="profile-photo-wrapper reveal">
+            <img src="/static/uploads/photo/default.jpg" alt="Photo de profil" id="profile-photo" onerror="this.src='https://ui-avatars.com/api/?name=Cedrick+B+Kabengele&background=8b5cf6&color=fff&size=250'" />
+          </div>
+        </div>
+        <div class="col-lg-8">
+          <div class="about-text reveal">
+            <p>
+              Mon parcours a commencé sur les <strong>réseaux</strong> : CCNA Cisco,
+              Fortinet NSE, CompTIA Security+. J'ai sécurisé des infrastructures —
+              puis j'ai compris que les attaques modernes passent par le code.
+            </p>
+            <p>
+              Je me suis donc spécialisé en <strong>DevSecOps</strong> : des pipelines
+              CI/CD sécurisés, des architectures microservices conteneurisées avec
+              <strong>Docker</strong> et <strong>Kubernetes</strong>, et une sécurité
+              pensée dès la conception — OWASP, JWT, chiffrement, analyse de vulnérabilités.
+            </p>
+            <p>
+              Aujourd'hui, je relie ces deux mondes : le réseau et le code ne font
+              qu'un système, et je le maîtrise de bout en bout.
+            </p>
+            <p>
+              Ma force : allier la <strong>rigueur de l'ingénieur réseau</strong> à la
+              <strong>vitesse du développeur</strong>. Je conçois des architectures
+              microservices scalables et sécurisées, j'automatise le déploiement avec des
+              pipelines CI/CD robustes, et je garde toujours un œil sur les
+              <strong>vulnérabilités</strong> — avant, pendant et après la mise en production.
+            </p>
+            <p>
+              Curieux et passionné, j'aime transformer des problèmes complexes en
+              solutions simples : un système d'information n'a de valeur que s'il est
+              <strong>disponible, performant et sécurisé</strong>.
+            </p>
+
+            <div class="about-actions">
+              <button class="btn btn-primary" id="view-cv-btn">Voir mon CV</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPÉTENCES -->
+    <section id="competences" class="section">
+      <div class="section-head reveal">
+        <h2 class="section-title">Mon <span class="gradient-text">arsenal</span> technique</h2>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-4">
+          <div class="skill-card reveal">
+            <div class="skill-icon">🔐</div>
+            <h3>DevSecOps & CI/CD</h3>
+            <div class="skill-bar"><div class="skill-fill" data-width="90%"><span>CI/CD sécurisé</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="85%"><span>Infrastructure as Code</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="80%"><span>GitHub Actions</span></div></div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="skill-card reveal">
+            <div class="skill-icon">🐳</div>
+            <h3>Conteneurs & Orchestration</h3>
+            <div class="skill-bar"><div class="skill-fill" data-width="90%"><span>Docker</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="85%"><span>Kubernetes</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="75%"><span>Auto-scaling / HA</span></div></div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="skill-card reveal">
+            <div class="skill-icon">🐍</div>
+            <h3>Développement</h3>
+            <div class="skill-bar"><div class="skill-fill" data-width="90%"><span>Python</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="85%"><span>Flask</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="80%"><span>Architecture microservices</span></div></div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="skill-card reveal">
+            <div class="skill-icon">🗄️</div>
+            <h3>Données & Messages</h3>
+            <div class="skill-bar"><div class="skill-fill" data-width="85%"><span>PostgreSQL</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="80%"><span>Redis</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="80%"><span>RabbitMQ</span></div></div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="skill-card reveal">
+            <div class="skill-icon">🛡️</div>
+            <h3>Cybersécurité</h3>
+            <div class="skill-bar"><div class="skill-fill" data-width="90%"><span>OWASP Top 10</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="85%"><span>JWT & chiffrement</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="80%"><span>Analyse de vulnérabilités</span></div></div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="skill-card reveal">
+            <div class="skill-icon">🌐</div>
+            <h3>Réseaux & Télécoms</h3>
+            <div class="skill-bar"><div class="skill-fill" data-width="90%"><span>CCNA 1-3</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="85%"><span>Fortinet NSE 1-3</span></div></div>
+            <div class="skill-bar"><div class="skill-fill" data-width="80%"><span>Sécurité périmètre</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CERTIFICATIONS -->
+    <section id="certifications" class="section">
+      <div class="section-head reveal">
+        <h2 class="section-title">Mes <span class="gradient-text">certifications</span> & <span class="gradient-text">formations</span></h2>
+      </div>
+      <div class="row g-4 mb-4" id="certs-grid">
+        <!-- Certifications obtenues (fichiers) chargées dynamiquement depuis le backend -->
+      </div>
+
+      <div class="section-head reveal" style="margin-top: 48px;">
+        <h2 class="section-title">Formations</h2>
+      </div>
+      <div class="row g-4 mb-4" id="certs-progress-grid">
+        <!-- Certifications en cours chargées dynamiquement depuis le backend -->
+      </div>
+      <div class="row g-4 mb-4" id="formations-grid">
+        {% for form in formations %}
+        <div class="col-md-6">
+          <div class="formation-card">
+            <span class="formation-tag">{{ '🎓 En cours' if form.status == 'en_cours' else '✅ Terminée' }}</span>
+            <h3>{{ form.title }}</h3>
+            <p>{% if form.institution %}<strong>{{ form.institution }}</strong><br />{% endif %}{{ form.description }}</p>
+          </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center text-muted py-3"><p>Aucune formation pour le moment.</p></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- MODAL CERTIFICAT (VIEW ONLY) -->
+    <div class="modal fade" id="certModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content bg-dark text-light" style="max-height: 90vh;">
+          <div class="modal-header border-secondary">
+            <h5 class="modal-title" id="certModalTitle">Certification</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-0">
+            <iframe id="cert-iframe" src="" style="width: 100%; height: 85vh; min-height: 60vh; border: none; display: none;"></iframe>
+            <div id="cert-image-wrap" style="width: 100%; display: none; padding: 16px; overflow: auto; max-height: 85vh;">
+              <img id="cert-image" src="" style="width: 100%; max-width: 100%; object-fit: contain; display: block;" />
+            </div>
+            <div id="cert-empty" class="d-flex align-items-center justify-content-center" style="height: 60vh;">
+              <p class="text-muted">Ce certificat n'est pas disponible.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL CV (VIEW ONLY) -->
+    <div class="modal fade" id="cvModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content bg-dark text-light" style="max-height: 90vh;">
+          <div class="modal-header border-secondary">
+            <h5 class="modal-title">CV - Cedrick B. Kabengele</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-0">
+            <iframe id="cv-iframe" src="" style="width: 100%; height: 85vh; min-height: 70vh; border: none; display: none;"></iframe>
+            <div id="cv-image-wrap" style="width: 100%; display: none; padding: 16px; overflow: auto; max-height: 85vh;">
+              <img id="cv-image" src="" style="width: 100%; max-width: 100%; object-fit: contain; display: block;" />
+            </div>
+            <div id="cv-empty" class="d-flex align-items-center justify-content-center" style="height: 70vh;">
+              <p class="text-muted">Aucun CV n'a été uploadé pour le moment.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJETS -->
+    <section id="projets" class="section">
+      <div class="section-head reveal">
+        <h2 class="section-title">Mes <span class="gradient-text">réalisations</span></h2>
+      </div>
+      <div class="row g-4" id="realisations-grid">
+        <!-- Réalisations chargées dynamiquement depuis le backend -->
+      </div>
+      <div class="vision-strip reveal">
+        <p class="vision-quote">« La sécurité n'est pas une couche ajoutée à la fin — c'est un état d'esprit intégré dès la conception. »</p>
+        <div class="vision-tags">
+          <span>Shift Left</span>
+          <span>Security as Code</span>
+          <span>Zero Trust</span>
+          <span>DevSecOps</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="section">
+      <div class="section-head reveal">
+        <h2 class="section-title">Travaillons <span class="gradient-text">ensemble</span></h2>
+      </div>
+      <div class="row g-5">
+        <div class="col-lg-5">
+          <div class="contact-info reveal">
+            <p>Un projet à sécuriser ? Une architecture microservices à concevoir ? Écrivez-moi, je réponds en général sous 24h.</p>
+            <div class="contact-links">
+              <a href="https://www.linkedin.com/in/cedrick-b-4343012b2?utm_source=share_via&utm_content=profile&utm_medium=member_ios" target="_blank" rel="noopener" class="contact-link">💼 LinkedIn</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <form class="contact-form reveal" id="contact-form" novalidate>
+            <input type="text" name="nom" placeholder="Votre nom" required />
+            <input type="email" name="email" placeholder="Votre email" required />
+            <textarea name="message" rows="5" placeholder="Votre message..." required></textarea>
+            <button type="submit" class="btn btn-primary">Envoyer le message 🚀</button>
+            <p class="form-status" id="form-status"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© <span id="year"></span> Cedrick B. Kabengele</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/main.js?v=4"></script>
+</body>
+</html>

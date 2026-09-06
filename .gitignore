@@ -1,0 +1,20 @@
+# Secrets et configuration
+config.json
+
+# Base de données
+*.db
+*.db-journal
+
+# Fichiers uploadés (certifications, CV, photo)
+static/uploads/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Système / éphémères
+0
+.DS_Store
+Thumbs.db

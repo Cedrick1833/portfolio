@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#10162b"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#22d3ee" opacity="0.14"/>
+    </pattern>
+    <style>
+      text { font-family: monospace; }
+      .titre { fill: #22d3ee; font-size: 15px; letter-spacing: 4px; }
+      .sub { fill: #9aa3bf; font-size: 11px; letter-spacing: 1px; }
+      .grid { stroke: #1e2440; stroke-width: 1; }
+      .chart { fill: none; stroke: url(#lg); stroke-width: 3; filter: url(#glow); stroke-dasharray: 9 6; animation: flow 1.6s linear infinite; }
+      @keyframes flow { to { stroke-dashoffset: -30; } }
+      .dot { fill: #ec4899; }
+      .card { fill: #10162b; stroke: #1e2440; stroke-width: 1.5; }
+      .val { fill: #e8ecf8; font-size: 22px; font-weight: bold; }
+      .label { fill: #9aa3bf; font-size: 10px; letter-spacing: 2px; }
+      .pulse { animation: pulse 1.4s ease-in-out infinite; }
+      @keyframes pulse { 50% { opacity: .25; } }
+    </style>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <rect width="800" height="450" fill="url(#dots)"/>
+  <text x="400" y="40" text-anchor="middle" class="titre">OBSERVABILITE — PROMETHEUS . GRAFANA</text>
+  <text x="400" y="60" text-anchor="middle" class="sub">metrics temps reel . alerting . SLO</text>
+
+  <rect class="card" x="40" y="90" width="440" height="310" rx="14"/>
+  <line class="grid" x1="60" y1="140" x2="460" y2="140"/>
+  <line class="grid" x1="60" y1="190" x2="460" y2="190"/>
+  <line class="grid" x1="60" y1="240" x2="460" y2="240"/>
+  <line class="grid" x1="60" y1="290" x2="460" y2="290"/>
+  <line class="grid" x1="60" y1="340" x2="460" y2="340"/>
+  <line class="grid" x1="120" y1="110" x2="120" y2="380"/>
+  <line class="grid" x1="200" y1="110" x2="200" y2="380"/>
+  <line class="grid" x1="280" y1="110" x2="280" y2="380"/>
+  <line class="grid" x1="360" y1="110" x2="360" y2="380"/>
+  <line class="grid" x1="440" y1="110" x2="440" y2="380"/>
+  <polygon points="60,360 120,320 180,340 240,260 300,280 360,210 420,170 460,140 460,380 60,380" fill="url(#area)"/>
+  <polyline class="chart" points="60,360 120,320 180,340 240,260 300,280 360,210 420,170 460,140"/>
+  <circle class="dot" cx="60" cy="360" r="4"/>
+  <circle class="dot" cx="240" cy="260" r="4"/>
+  <circle class="dot" cx="360" cy="210" r="4"/>
+  <circle class="dot" cx="460" cy="140" r="4"/>
+
+  <rect class="card" x="520" y="90" width="240" height="86" rx="14"/>
+  <text x="640" y="128" text-anchor="middle" class="val">99.9%</text>
+  <text x="640" y="152" text-anchor="middle" class="label">UPTIME SLO</text>
+  <rect class="card" x="520" y="192" width="240" height="86" rx="14"/>
+  <text x="640" y="230" text-anchor="middle" class="val">200ms</text>
+  <text x="640" y="254" text-anchor="middle" class="label">LATENCE P99</text>
+  <rect class="card" x="520" y="294" width="240" height="106" rx="14"/>
+  <text x="640" y="330" text-anchor="middle" class="val">10k/min</text>
+  <text x="640" y="354" text-anchor="middle" class="label">REQUETES EN PIC</text>
+  <circle class="pulse" cx="578" cy="362" r="6" fill="#28c840"/>
+  <text x="598" y="366" class="label">alertmanager actif</text>
+</svg>
