@@ -398,9 +398,8 @@ def login_required(f):
 
 @app.route('/')
 def index():
-    cert_files = get_uploads('cert')
     cert_db = get_certifications()
-    certifications_count = len(cert_files) + len(cert_db)
+    certifications_count = len(cert_db)
     realisations_count = len(get_realisations())
     formations_count = len(get_formations())
     return render_template(
@@ -484,10 +483,6 @@ def admin_login():
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
-    certs = [
-        {'filename': c['filename'], 'url': c['url'], 'original_name': c.get('original_name', '')}
-        for c in get_uploads('cert')
-    ]
     cv_list = get_uploads('cv')
     cv_info = {}
     if cv_list:
@@ -507,7 +502,7 @@ def admin_dashboard():
     config = get_config()
 
     return render_template('admin.html',
-        certs=certs, cv=cv_info, photo=photo_info,
+        cv=cv_info, photo=photo_info,
         certifications=certifications,
         realisations=realisations,
         formations=formations,

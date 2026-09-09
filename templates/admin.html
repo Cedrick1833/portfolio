@@ -429,7 +429,6 @@
     </div>
     <ul class="sidebar-nav">
       <li><a href="#" class="active" data-tab="tab-photo"><span>📷</span> Photo profil</a></li>
-      <li><a href="#" data-tab="tab-certs"><span>📁</span> Certificats fichiers</a></li>
       <li><a href="#" data-tab="tab-certifications"><span>📜</span> Certifications <span class="badge">gérer</span></a></li>
       <li><a href="#" data-tab="tab-realisations"><span>🚀</span> Réalisations</a></li>
       <li><a href="#" data-tab="tab-formations"><span>🎓</span> Formations</a></li>
@@ -450,10 +449,6 @@
 
     <!-- STATS -->
     <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-num">{{ certs|length }}</div>
-        <div class="stat-label">Certificats fichiers</div>
-      </div>
       <div class="stat-card">
         <div class="stat-num">{{ certifications|length }}</div>
         <div class="stat-label">Certifications listées</div>
@@ -497,45 +492,6 @@
               <button type="submit" class="btn-admin">Mettre à jour</button>
             </form>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: CERTS FICHIERS -->
-    <div class="tab-section" id="tab-certs">
-      <div class="admin-card">
-        <h3><span>📁</span> Certificats fichiers (PDF / Images)</h3>
-        <form id="cert-form" enctype="multipart/form-data" class="mb-3">
-          <div class="row g-3 align-items-end">
-            <div class="col-md-9">
-              <label class="form-label">Sélectionner un fichier</label>
-              <input type="file" class="form-control" name="cert" accept="image/*,.pdf" required />
-            </div>
-            <div class="col-md-3">
-              <button type="submit" class="btn-admin w-100">Ajouter</button>
-            </div>
-          </div>
-        </form>
-        <div id="certs-file-list">
-          {% for cert in certs %}
-          <div class="file-item" id="cert-{{ cert.filename }}">
-            <div class="d-flex align-items-center">
-              {% if cert.filename.endswith('.pdf') %}
-                <span style="font-size: 1.5rem; margin-right: 12px;">📄</span>
-              {% else %}
-                <img src="{{ cert.url }}" alt="Cert" class="file-preview" />
-              {% endif %}
-              <div>
-                <div style="font-weight: 500; font-size: 0.9rem;">{{ cert.original_name or cert.filename }}</div>
-                <div style="font-size: 0.75rem; color: #5a647e; font-family: 'JetBrains Mono', monospace;">{{ cert.filename }}</div>
-              </div>
-            </div>
-            <button class="btn-danger-outline" onclick="deleteCertFile('{{ cert.filename }}')">Supprimer</button>
-          </div>
-          {% endfor %}
-          {% if not certs %}
-          <p style="color: #5a647e; font-size: 0.9rem; text-align: center; padding: 20px;">Aucun fichier certificat uploadé.</p>
-          {% endif %}
         </div>
       </div>
     </div>
@@ -868,19 +824,6 @@
       const res = await fetch('/admin/api/upload/photo', { method: 'POST', body: new FormData(e.target) });
       if (res.ok) { showToast('Photo mise à jour !'); setTimeout(() => location.reload(), 600); }
     });
-
-    // CERT FICHIERS
-    document.getElementById('cert-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const res = await fetch('/admin/api/upload/cert', { method: 'POST', body: new FormData(e.target) });
-      if (res.ok) { showToast('Certificat ajouté !'); setTimeout(() => location.reload(), 600); }
-    });
-
-    async function deleteCertFile(filename) {
-      if (!confirm('Supprimer ce fichier ?')) return;
-      const res = await fetch('/admin/api/cert/' + filename, { method: 'DELETE' });
-      if (res.ok) { document.getElementById('cert-' + filename).remove(); showToast('Fichier supprimé.'); }
-    }
 
     // CERTIFICATIONS
     document.getElementById('add-cert-form').addEventListener('submit', async (e) => {
