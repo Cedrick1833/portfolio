@@ -564,6 +564,10 @@
             <div class="col-md-2 d-flex align-items-end">
               <button type="submit" class="btn-admin w-100">Ajouter</button>
             </div>
+            <div class="col-12">
+              <label class="form-label">Fichier justificatif (PDF ou image, optionnel)</label>
+              <input type="file" class="form-control" id="cert-file" accept=".pdf,image/*" />
+            </div>
           </div>
         </form>
       </div>
@@ -578,9 +582,21 @@
               <div>
                 <div style="font-weight: 600; font-size: 0.95rem;">{{ cert.title }}</div>
                 <div style="font-size: 0.82rem; color: #9aa3bf;">{{ cert.description }}</div>
+                {% if cert.file_url %}
+                <div style="font-size: 0.8rem; color: #22c55e; margin-top: 3px;">
+                  📎 {{ cert.file_name or cert.file_url }}
+                </div>
+                {% else %}
+                <div style="font-size: 0.8rem; color: #5a647e; margin-top: 3px;">Aucun fichier joint</div>
+                {% endif %}
               </div>
             </div>
             <div class="d-flex align-items-center gap-2">
+              <button class="btn-admin-outline" onclick="uploadCertFile({{ cert.id }})">{{ 'Remplacer' if cert.file_url else 'Joindre' }} fichier</button>
+              {% if cert.file_url %}
+              <a class="btn-admin-outline" href="{{ cert.file_url }}" target="_blank">Voir</a>
+              <button class="btn-danger-outline" onclick="removeCertFile({{ cert.id }})">Retirer</button>
+              {% endif %}
               <button class="btn-admin-outline" onclick="beginEditCert({{ cert.id }})">Modifier</button>
               <button class="btn-danger-outline" onclick="deleteCertification({{ cert.id }})">Supprimer</button>
             </div>
@@ -869,18 +885,38 @@
     // CERTIFICATIONS
     document.getElementById('add-cert-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const data = {
-        title: document.getElementById('cert-title').value.trim(),
-        description: document.getElementById('cert-desc').value.trim(),
-        status: document.getElementById('cert-status').value
-      };
+      const fd = new FormData();
+      fd.append('title', document.getElementById('cert-title').value.trim());
+      fd.append('description', document.getElementById('cert-desc').value.trim());
+      fd.append('status', document.getElementById('cert-status').value);
+      const fileInput = document.getElementById('cert-file');
+      if (fileInput && fileInput.files.length) fd.append('file', fileInput.files[0]);
       const res = await fetch('/admin/api/certifications', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: fd
       });
       if (res.ok) { showToast('Certification ajoutée !'); setTimeout(() => location.reload(), 600); }
     });
+
+    async function uploadCertFile(id) {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.pdf,image/*';
+      fileInput.onchange = async () => {
+        if (!fileInput.files.length) return;
+        const fd = new FormData();
+        fd.append('file', fileInput.files[0]);
+        const res = await fetch('/admin/api/certifications/' + id + '/file', { method: 'POST', body: fd });
+        if (res.ok) { showToast('Fichier joint !'); setTimeout(() => location.reload(), 600); }
+      };
+      fileInput.click();
+    }
+
+    async function removeCertFile(id) {
+      if (!confirm('Retirer le fichier de cette certification ?')) return;
+      const res = await fetch('/admin/api/certifications/' + id + '/file', { method: 'DELETE' });
+      if (res.ok) { showToast('Fichier retiré.'); setTimeout(() => location.reload(), 600); }
+    }
 
     async function deleteCertification(id) {
       if (!confirm('Supprimer cette certification ?')) return;

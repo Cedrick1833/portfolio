@@ -1199,3 +1199,51 @@ body::after {
 
   .contact-links, .contact-form { width: 100%; }
 }
+
+/* ============ MODAL RESPONSIVE (mobile) ============ */
+@media (max-width: 768px) {
+  #certModal .modal-dialog,
+  #cvModal .modal-dialog {
+    margin: 0;
+    max-width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  #certModal .modal-content,
+  #cvModal .modal-content {
+    min-height: 100vh;
+    min-height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+
+  #certModal .modal-header,
+  #cvModal .modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #1a1e2e;
+    padding: 12px 16px;
+  }
+
+  #certModal .modal-body iframe,
+  #cvModal .modal-body iframe {
+    height: calc(100vh - 60px) !important;
+    height: calc(100dvh - 60px) !important;
+    min-height: 40vh !important;
+  }
+
+  #certModal .modal-body #cert-image-wrap,
+  #cvModal .modal-body #cv-image-wrap {
+    max-height: calc(100vh - 60px) !important;
+    max-height: calc(100dvh - 60px) !important;
+  }
+
+  #certModal .modal-body #cert-empty,
+  #cvModal .modal-body #cv-empty {
+    height: 50vh;
+  }
+}

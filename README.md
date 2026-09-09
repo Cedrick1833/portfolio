@@ -59,3 +59,20 @@ Exemple de `config.json` :
 ## Déploiement
 
 Ce projet est une application **Flask avec une base SQLite** : il nécessite un hébergeur capable d'exécuter un backend Python (ex. Render, Railway, PythonAnywhere). **GitHub Pages ne sert que du contenu statique** et ne peut pas exécuter cette application.
+
+### Déploiement automatique (PythonAnywhere + GitHub Actions)
+
+Le dépôt contient un workflow GitHub Actions (`.github/workflows/deploy-pythonanywhere.yml`) qui déploie automatiquement vos modifications en ligne à **chaque `git push` sur `main`**. Vous n'avez rien à faire après le push.
+
+**Configuration initiale (une seule fois) :**
+
+1. Créez un **API token** PythonAnywhere : onglet « Account » → « API token » → « Create a new API token ». Copiez la valeur.
+2. Obtenez votre **domaine** PythonAnywhere (ex. `cedrick1833.pythonanywhere.com`) et le dossier distant du projet (défini dans `wsgi.py`, ex. `/home/cedrick1833/portfolio`).
+3. Dans votre dépôt GitHub : **Settings → Secrets and variables → Actions → New repository secret**, et ajoutez :
+   - `PA_API_TOKEN` → le token de l'étape 1
+   - `PA_USERNAME` → votre nom d'utilisateur PythonAnywhere (ex. `cedrick1833`)
+   - `PA_DOMAIN` → votre domaine (ex. `cedrick1833.pythonanywhere.com`)
+   - `PA_REMOTE_DIR` → le dossier distant (ex. `/home/cedrick1833/portfolio`)
+4. Poussez un commit sur `main` : le workflow déploie automatiquement.
+
+**Note** : les données (`portfolio.db`), les uploads (`static/uploads/`) et `config.json` ne sont **pas** déployés ni versionnés — ils restent sur PythonAnywhere, saisis via le back-office admin en ligne.

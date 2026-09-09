@@ -33,8 +33,9 @@ UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
 PHOTO_FOLDER = os.path.join(UPLOAD_FOLDER, 'photo')
 CERTS_FOLDER = os.path.join(UPLOAD_FOLDER, 'certs')
 CV_FOLDER = os.path.join(UPLOAD_FOLDER, 'cv')
+CERTIF_FILES_FOLDER = os.path.join(UPLOAD_FOLDER, 'certifs')
 
-for folder in [PHOTO_FOLDER, CERTS_FOLDER, CV_FOLDER]:
+for folder in [PHOTO_FOLDER, CERTS_FOLDER, CV_FOLDER, CERTIF_FILES_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
 # ---------- CONFIG ----------
@@ -120,6 +121,11 @@ def init_db():
             created_at TEXT NOT NULL
         )
     ''')
+    cert_cols = [r[1] for r in cursor.execute('PRAGMA table_info(certifications)').fetchall()]
+    if 'file_url' not in cert_cols:
+        cursor.execute("ALTER TABLE certifications ADD COLUMN file_url TEXT DEFAULT ''")
+    if 'file_name' not in cert_cols:
+        cursor.execute("ALTER TABLE certifications ADD COLUMN file_name TEXT DEFAULT ''")
     db.commit()
     db.close()
 
@@ -209,7 +215,9 @@ def add_certification(title, description, status):
         'INSERT INTO certifications (title, description, status, created_at) VALUES (?, ?, ?, ?)',
         (title, description, status, datetime.now().isoformat())
     )
+    cert_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
     db.commit()
+    return cert_id
 
 def delete_certification(cert_id):
     db = get_db()
@@ -228,6 +236,21 @@ def update_certification(cert_id, title, description, status):
         (title, description, status, cert_id)
     )
     db.commit()
+
+def attach_cert_file(cert_id, filename, url):
+    db = get_db()
+    db.execute(
+        'UPDATE certifications SET file_name = ?, file_url = ? WHERE id = ?',
+        (filename, url, cert_id)
+    )
+    db.commit()
+
+def get_cert_file(cert_id):
+    db = get_db()
+    row = db.execute('SELECT * FROM certifications WHERE id = ?', (cert_id,)).fetchone()
+    if not row:
+        return None
+    return dict(row)['file_url'] or None
 
 # --- REALISATIONS DB ---
 
@@ -576,21 +599,46 @@ def admin_delete_cv():
 @app.route('/admin/api/certifications', methods=['POST'])
 @login_required
 def admin_add_certification():
-    data = request.get_json()
-    title = data.get('title', '').strip()
-    description = data.get('description', '').strip()
-    status = data.get('status', 'obtenue')
+    status = 'obtenue'
+    title = ''
+    description = ''
+    file = None
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        title = (request.form.get('title') or '').strip()
+        description = (request.form.get('description') or '').strip()
+        status = request.form.get('status', 'obtenue')
+        if 'file' in request.files:
+            f = request.files['file']
+            if f.filename:
+                file = f
+    else:
+        data = request.get_json()
+        title = data.get('title', '').strip()
+        description = data.get('description', '').strip()
+        status = data.get('status', 'obtenue')
     if not title or not description:
         return jsonify({'error': 'Titre et description requis'}), 400
     if status not in ('obtenue', 'en_cours'):
         status = 'obtenue'
-    add_certification(title, description, status)
+    cert_id = add_certification(title, description, status)
+    if file:
+        ext = os.path.splitext(file.filename)[1] or '.pdf'
+        filename = f"cert_{cert_id}_{int(time.time())}{ext}"
+        file.save(os.path.join(CERTIF_FILES_FOLDER, filename))
+        url = f'/static/uploads/certifs/{filename}'
+        attach_cert_file(cert_id, file.filename, url)
     return jsonify({'success': True})
 
 @app.route('/admin/api/certifications/<int:cert_id>', methods=['PUT', 'DELETE'])
 @login_required
 def admin_modify_certification(cert_id):
     if request.method == 'DELETE':
+        file_url = get_cert_file(cert_id)
+        if file_url:
+            fname = os.path.basename(file_url)
+            fpath = os.path.join(CERTIF_FILES_FOLDER, fname)
+            if os.path.exists(fpath):
+                os.remove(fpath)
         delete_certification(cert_id)
         return jsonify({'status': 'deleted'})
 
@@ -604,6 +652,38 @@ def admin_modify_certification(cert_id):
         status = 'obtenue'
     update_certification(cert_id, title, description, status)
     return jsonify({'success': True})
+
+@app.route('/admin/api/certifications/<int:cert_id>/file', methods=['POST', 'DELETE'])
+@login_required
+def admin_certification_file(cert_id):
+    if request.method == 'DELETE':
+        file_url = get_cert_file(cert_id)
+        if not file_url:
+            return jsonify({'status': 'deleted'})
+        fname = os.path.basename(file_url)
+        fpath = os.path.join(CERTIF_FILES_FOLDER, fname)
+        if os.path.exists(fpath):
+            os.remove(fpath)
+        attach_cert_file(cert_id, '', '')
+        return jsonify({'status': 'deleted'})
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    file_url = get_cert_file(cert_id)
+    if file_url:
+        old = os.path.basename(file_url)
+        old_path = os.path.join(CERTIF_FILES_FOLDER, old)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+    ext = os.path.splitext(file.filename)[1] or '.pdf'
+    filename = f"cert_{cert_id}_{int(time.time())}{ext}"
+    file.save(os.path.join(CERTIF_FILES_FOLDER, filename))
+    url = f'/static/uploads/certifs/{filename}'
+    attach_cert_file(cert_id, file.filename, url)
+    return jsonify({'filename': filename, 'url': url})
 
 # --- REALISATIONS ---
 
