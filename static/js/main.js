@@ -316,14 +316,16 @@ const pdfViewers = {
     canvas: document.getElementById('cert-pdf-canvas'),
     pageInfo: document.getElementById('cert-pdf-pageinfo'),
     pdf: null,
-    page: 1
+    page: 1,
+    fit: 'width'
   },
   cv: {
     wrap: cvPdfWrap,
     canvas: document.getElementById('cv-pdf-canvas'),
     pageInfo: document.getElementById('cv-pdf-pageinfo'),
     pdf: null,
-    page: 1
+    page: 1,
+    fit: 'height'
   }
 };
 
@@ -355,10 +357,21 @@ async function renderPdfPage(key) {
   if (v.page > doc.numPages) v.page = doc.numPages;
 
   const page = await doc.getPage(v.page);
-  const containerWidth = v.wrap.clientWidth || window.innerWidth - 40;
   const base = page.getViewport({ scale: 1 });
-  const fitScale = containerWidth / base.width;
-  const scale = Math.min(Math.max(fitScale, 0.5), 2);
+  const scrollEl = v.canvas.parentElement;
+  const pad = 28;
+  let availW = (scrollEl.clientWidth || window.innerWidth) - pad;
+  let availH = (scrollEl.clientHeight || 500) - pad;
+  let scale;
+  if (v.fit === 'height') {
+    scale = availH / base.height;
+    if (availW > 0) scale = Math.min(scale, availW / base.width);
+    scale = Math.max(scale, 0.2);
+  } else {
+    scale = availW / base.width;
+    scale = Math.max(scale, 0.4);
+  }
+  scale = Math.min(scale, 3);
   const viewport = page.getViewport({ scale });
 
   const canvas = v.canvas;
@@ -395,10 +408,16 @@ const certImageWrap = document.getElementById('cert-image-wrap');
 const certEmpty = document.getElementById('cert-empty');
 const certModalTitle = document.getElementById('certModalTitle');
 
-async function loadCertsGrid() {
-  const certsRes = await fetch('/api/certifications');
-  const certifications = await certsRes.json();
+async function fetchCertifications() {
+  const res = await fetch('/api/certifications', { cache: 'no-store' });
+  return res.json();
+}
+
+async function loadCertsGrid(certifications, silent) {
   certsGrid.innerHTML = '';
+  if (!certifications) {
+    certifications = await fetchCertifications();
+  }
 
   const obtained = certifications.filter(c => c.status === 'obtenue');
 
@@ -413,11 +432,12 @@ async function loadCertsGrid() {
     const hasFile = !!(cert.file_url);
     const isPdf = hasFile ? cert.file_url.toLowerCase().endsWith('.pdf') : false;
     const urlStamp = hasFile ? cert.file_url + '?t=' + Date.now() : '';
+    const cardClass = silent ? 'cert-dynamic-card reveal visible' : 'cert-dynamic-card reveal';
 
     const col = document.createElement('div');
     col.className = 'col-md-6 col-lg-4';
     col.innerHTML = `
-      <article class="cert-dynamic-card reveal" style="animation-delay: ${index * 0.1}s">
+      <article class="${cardClass}" style="animation-delay: ${index * 0.1}s">
         <div class="cert-visual">
           ${hasFile
             ? isPdf
@@ -445,15 +465,18 @@ async function loadCertsGrid() {
     index++;
   });
 
-  document.querySelectorAll('.cert-dynamic-card.reveal').forEach(el => revealObserver.observe(el));
+  if (!silent) {
+    document.querySelectorAll('.cert-dynamic-card.reveal').forEach(el => revealObserver.observe(el));
+  }
 }
 
 /* ============ CERTIFICATIONS EN COURS (dynamique) ============ */
 const certsProgressGrid = document.getElementById('certs-progress-grid');
 
-async function loadCertsProgress() {
-  const res = await fetch('/api/certifications');
-  const certifications = await res.json();
+async function loadCertsProgress(certifications, silent) {
+  if (!certifications) {
+    certifications = await fetchCertifications();
+  }
   certsProgressGrid.innerHTML = '';
 
   const inProgress = certifications.filter(c => c.status === 'en_cours');
@@ -464,10 +487,11 @@ async function loadCertsProgress() {
   }
 
   inProgress.forEach((cert, index) => {
+    const cardClass = silent ? 'cert-progress-card reveal visible' : 'cert-progress-card reveal';
     const col = document.createElement('div');
     col.className = 'col-md-6 col-lg-4';
     col.innerHTML = `
-      <article class="cert-progress-card reveal" style="animation-delay: ${index * 0.1}s">
+      <article class="${cardClass}" style="animation-delay: ${index * 0.1}s">
         <div class="cert-progress-icon">⏳</div>
         <div class="cert-progress-body">
           <h4>${cert.title}</h4>
@@ -479,7 +503,9 @@ async function loadCertsProgress() {
     certsProgressGrid.appendChild(col);
   });
 
-  document.querySelectorAll('.cert-progress-card.reveal').forEach(el => revealObserver.observe(el));
+  if (!silent) {
+    document.querySelectorAll('.cert-progress-card.reveal').forEach(el => revealObserver.observe(el));
+  }
 }
 
 function openCertModal(file, displayName) {
@@ -509,8 +535,31 @@ function openCertModal(file, displayName) {
   certModal.show();
 }
 
-loadCertsGrid();
-loadCertsProgress();
+let certsCacheKey = '';
+
+async function initCertsGrid() {
+  const data = await fetchCertifications();
+  certsCacheKey = JSON.stringify(data);
+  await Promise.all([loadCertsGrid(data, false), loadCertsProgress(data, false)]);
+}
+
+async function autoRefreshCerts() {
+  try {
+    const data = await fetchCertifications();
+    const key = JSON.stringify(data);
+    if (key === certsCacheKey) return;
+    certsCacheKey = key;
+    await Promise.all([loadCertsGrid(data, true), loadCertsProgress(data, true)]);
+  } catch (e) {}
+}
+
+initCertsGrid();
+
+setInterval(autoRefreshCerts, 25000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) autoRefreshCerts();
+});
+window.addEventListener('focus', autoRefreshCerts);
 
 /* ============ REALISATIONS (dynamique) ============ */
 const realisationsGrid = document.getElementById('realisations-grid');
