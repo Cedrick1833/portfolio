@@ -44,7 +44,7 @@ def main():
         with open(rel, "rb") as fh:
             data = fh.read()
         url = "{}/{}/files/path{}".format(API_BASE, username, remote_dir + "/" + rel)
-        r = requests.post(url, headers=headers, data=data)
+        r = requests.post(url, headers=headers, files={"content": data})
         print("Upload {} -> {}".format(rel, r.status_code))
         if r.status_code not in (200, 201):
             print(r.text)
