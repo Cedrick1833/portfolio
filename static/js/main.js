@@ -272,14 +272,16 @@ const cvIframe = document.getElementById('cv-iframe');
 const cvImage = document.getElementById('cv-image');
 const cvImageWrap = document.getElementById('cv-image-wrap');
 const cvEmpty = document.getElementById('cv-empty');
+const cvPdfWrap = document.getElementById('cv-pdf-wrap');
 
 async function loadCV() {
   const res = await fetch('/api/cv');
   const data = await res.json();
-  
+
   cvIframe.style.display = 'none';
   cvImageWrap.style.display = 'none';
   cvEmpty.style.display = 'none';
+  cvPdfWrap.style.display = 'none';
 
   if (!data.url) {
     cvEmpty.style.display = 'flex';
@@ -290,13 +292,99 @@ async function loadCV() {
   const isPdf = data.filename.endsWith('.pdf');
 
   if (isPdf) {
-    cvIframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0';
-    cvIframe.style.display = 'block';
+    if (window.pdfjsLib) {
+      cvPdfWrap.style.display = 'block';
+      loadPdf('cv', url);
+    } else {
+      cvIframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0';
+      cvIframe.style.display = 'block';
+    }
   } else {
     cvImage.src = url;
     cvImageWrap.style.display = 'block';
   }
 }
+
+/* ============ VISIONNEUSE PDF (canvas) ============ */
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+const pdfViewers = {
+  cert: {
+    wrap: document.getElementById('cert-pdf-wrap'),
+    canvas: document.getElementById('cert-pdf-canvas'),
+    pageInfo: document.getElementById('cert-pdf-pageinfo'),
+    pdf: null,
+    page: 1
+  },
+  cv: {
+    wrap: cvPdfWrap,
+    canvas: document.getElementById('cv-pdf-canvas'),
+    pageInfo: document.getElementById('cv-pdf-pageinfo'),
+    pdf: null,
+    page: 1
+  }
+};
+
+async function loadPdf(key, url) {
+  const v = pdfViewers[key];
+  if (v.pdf) {
+    v.pdf.destroy();
+    v.pdf = null;
+  }
+  if (!window.pdfjsLib) return;
+  try {
+    const loadingTask = pdfjsLib.getDocument(url);
+    v.pdf = await loadingTask.promise;
+    v.page = 1;
+    await renderPdfPage(key);
+    v.pageInfo.textContent = '1 / ' + v.pdf.numPages;
+  } catch (err) {
+    console.error('Erreur de chargement PDF', err);
+    v.pdf = null;
+    v.wrap.style.display = 'none';
+  }
+}
+
+async function renderPdfPage(key) {
+  const v = pdfViewers[key];
+  if (!v.pdf) return;
+  const doc = v.pdf;
+  if (v.page < 1) v.page = 1;
+  if (v.page > doc.numPages) v.page = doc.numPages;
+
+  const page = await doc.getPage(v.page);
+  const containerWidth = v.wrap.clientWidth || window.innerWidth - 40;
+  const base = page.getViewport({ scale: 1 });
+  const fitScale = containerWidth / base.width;
+  const scale = Math.min(Math.max(fitScale, 0.5), 2);
+  const viewport = page.getViewport({ scale });
+
+  const canvas = v.canvas;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(viewport.width * dpr);
+  canvas.height = Math.floor(viewport.height * dpr);
+  canvas.style.width = viewport.width + 'px';
+  canvas.style.height = viewport.height + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  v.pageInfo.textContent = v.page + ' / ' + doc.numPages;
+}
+
+document.querySelectorAll('.pdf-page-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const v = pdfViewers[btn.dataset.pdfkey];
+    if (!v.pdf) return;
+    const dir = parseInt(btn.dataset.dir, 10);
+    const next = v.page + dir;
+    if (next < 1 || next > v.pdf.numPages) return;
+    v.page = next;
+    renderPdfPage(btn.dataset.pdfkey);
+  });
+});
 
 /* ============ CERTIFICATIONS GRID (dynamique) ============ */
 const certsGrid = document.getElementById('certs-grid');
@@ -401,12 +489,18 @@ function openCertModal(file, displayName) {
   certIframe.style.display = 'none';
   certImageWrap.style.display = 'none';
   certEmpty.style.display = 'none';
+  pdfViewers.cert.wrap.style.display = 'none';
 
   const url = file.url + '?t=' + new Date().getTime();
 
   if (isPdf) {
-    certIframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0';
-    certIframe.style.display = 'block';
+    if (window.pdfjsLib) {
+      pdfViewers.cert.wrap.style.display = 'block';
+      loadPdf('cert', url);
+    } else {
+      certIframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0';
+      certIframe.style.display = 'block';
+    }
   } else {
     certImage.src = url;
     certImageWrap.style.display = 'block';
