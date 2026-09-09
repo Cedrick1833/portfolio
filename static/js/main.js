@@ -308,15 +308,13 @@ const certEmpty = document.getElementById('cert-empty');
 const certModalTitle = document.getElementById('certModalTitle');
 
 async function loadCertsGrid() {
-  const [certsRes, filesRes] = await Promise.all([fetch('/api/certifications'), fetch('/api/certs')]);
+  const certsRes = await fetch('/api/certifications');
   const certifications = await certsRes.json();
-  const files = await filesRes.json();
   certsGrid.innerHTML = '';
 
   const obtained = certifications.filter(c => c.status === 'obtenue');
-  const usedUrls = new Set(files.map(f => f.url));
 
-  if (obtained.length === 0 && files.length === 0) {
+  if (obtained.length === 0) {
     certsGrid.innerHTML = '<div class="col-12 text-center text-muted py-4"><p>Aucune certification uploadée pour le moment.</p></div>';
     return;
   }
@@ -339,7 +337,7 @@ async function loadCertsGrid() {
               : `<img src="${urlStamp}" alt="${cert.title}" />`
             : '<div class="cert-preview-placeholder"><span class="cert-preview-icon">🏆</span><span class="cert-preview-label">Obtenue</span></div>'
           }
-          ${hasFile ? '<div class="cert-overlay"><span class="btn btn-primary btn-small cert-view-btn">Voir le certificat ↗</span></div>' : ''}
+          ${hasFile ? '<div class="cert-overlay"><span class="btn btn-primary btn-small cert-view-btn">Voir le certificat</span></div>' : ''}
         </div>
         <div class="cert-info-bar">
           <h4>${cert.title}</h4>
@@ -354,40 +352,6 @@ async function loadCertsGrid() {
       const card = col.querySelector('.cert-dynamic-card');
       card.addEventListener('click', () => openCertModal({ filename: cert.file_url.split('/').pop(), url: cert.file_url, original_name: cert.title }, cert.title));
     }
-
-    certsGrid.appendChild(col);
-    index++;
-  });
-
-  files.forEach((file) => {
-    const isPdf = file.filename.endsWith('.pdf');
-    const displayName = file.original_name || file.filename.replace(/^\d+_/, '').replace(/\.[^.]+$/, '');
-
-    const col = document.createElement('div');
-    col.className = 'col-md-6 col-lg-4';
-    col.innerHTML = `
-      <article class="cert-dynamic-card reveal" style="animation-delay: ${index * 0.1}s">
-        <div class="cert-visual">
-          ${isPdf
-            ? '<div class="cert-preview-placeholder"><span class="cert-preview-icon">📄</span><span class="cert-preview-label">PDF</span></div>'
-            : `<img src="${file.url}?t=${Date.now()}" alt="${displayName}" />`
-          }
-          <div class="cert-overlay">
-            <span class="btn btn-primary btn-small cert-view-btn">Voir le certificat ↗</span>
-          </div>
-        </div>
-        <div class="cert-info-bar">
-          <h4>${displayName}</h4>
-          <span class="cert-type-badge">${isPdf ? 'PDF' : 'Image'}</span>
-        </div>
-      </article>
-    `;
-
-    const viewBtn = col.querySelector('.cert-view-btn');
-    viewBtn.addEventListener('click', () => openCertModal(file, displayName));
-
-    const card = col.querySelector('.cert-dynamic-card');
-    card.addEventListener('click', () => openCertModal(file, displayName));
 
     certsGrid.appendChild(col);
     index++;
