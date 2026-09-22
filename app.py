@@ -1,5 +1,8 @@
 import os
+import re
 import json
+import hmac
+import secrets
 import sqlite3
 import time
 import smtplib
@@ -12,11 +15,47 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
-app.secret_key = 'cedrick-portfolio-secret-key-2026'
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(BASE_DIR, 'config.json')
+SECRET_FILE = os.path.join(BASE_DIR, '.secret_key')
 DATABASE = os.path.join(BASE_DIR, 'portfolio.db')
+
+
+def load_secret_key():
+    """Clé secrète de session: vient de l'environnement (SECRET_KEY) ou d'un
+    fichier local .secret_key (gitignoré, généré une fois). Jamais en dur dans le code."""
+    env_key = (os.environ.get('SECRET_KEY') or '').strip()
+    if env_key:
+        return env_key
+    if os.path.exists(SECRET_FILE):
+        with open(SECRET_FILE, 'r', encoding='utf-8') as f:
+            stored = f.read().strip()
+        if stored:
+            return stored
+    key = secrets.token_hex(32)
+    with open(SECRET_FILE, 'w', encoding='utf-8') as f:
+        f.write(key)
+    try:
+        os.chmod(SECRET_FILE, 0o600)
+    except OSError:
+        pass
+    return key
+
+
+app.secret_key = load_secret_key()
+
+FORCE_HTTPS = os.environ.get('FORCE_HTTPS') == '1' or (os.environ.get('PA_DOMAIN') or '') != ''
+MAX_UPLOAD_MB = 15
+app.config.update(
+    SECRET_KEY=app.secret_key,
+    MAX_CONTENT_LENGTH=MAX_UPLOAD_MB * 1024 * 1024,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=FORCE_HTTPS,
+    PERMANENT_SESSION_LIFETIME=8 * 60 * 60,
+    FORCE_HTTPS=FORCE_HTTPS,
+)
 
 @app.after_request
 def add_no_cache(resp):
@@ -129,6 +168,14 @@ def init_db():
         cursor.execute("ALTER TABLE certifications ADD COLUMN file_url TEXT DEFAULT ''")
     if 'file_name' not in cert_cols:
         cursor.execute("ALTER TABLE certifications ADD COLUMN file_name TEXT DEFAULT ''")
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS rate_limits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            scope TEXT NOT NULL,
+            key TEXT NOT NULL,
+            attempted_at REAL NOT NULL
+        )
+    ''')
     db.commit()
     db.close()
 
@@ -416,6 +463,179 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# ---------- SÉCURITÉ ----------
+
+EMAIL_RE = re.compile(r'^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$')
+ALLOWED_IMAGES = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+ALLOWED_DOCS = ALLOWED_IMAGES | {'.pdf'}
+
+RATE_WINDOW = 900  # 15 minutes
+
+
+def is_rate_limited(scope, key, limit, window=RATE_WINDOW):
+    now = time.time()
+    cutoff = now - window
+    db = get_db()
+    db.execute('DELETE FROM rate_limits WHERE scope = ? AND attempted_at < ?', (scope, cutoff))
+    db.commit()
+    count = db.execute(
+        'SELECT COUNT(*) FROM rate_limits WHERE scope = ? AND key = ?',
+        (scope, key)
+    ).fetchone()[0]
+    return count >= limit
+
+
+def record_attempt(scope, key):
+    db = get_db()
+    db.execute(
+        'INSERT INTO rate_limits (scope, key, attempted_at) VALUES (?, ?, ?)',
+        (scope, key, time.time())
+    )
+    db.commit()
+
+
+def reset_attempts(scope, key):
+    db = get_db()
+    db.execute('DELETE FROM rate_limits WHERE scope = ? AND key = ?', (scope, key))
+    db.commit()
+
+
+def client_ip():
+    return request.remote_addr or 'unknown'
+
+
+def get_csrf_token():
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(32)
+    return session['csrf_token']
+
+
+@app.before_request
+def enforce_https():
+    if app.config.get('FORCE_HTTPS') and request.url.startswith('http://'):
+        proto = request.headers.get('X-Forwarded-Proto', 'http')
+        if proto != 'https':
+            return redirect(request.url.replace('http://', 'https://', 1))
+
+
+@app.before_request
+def csrf_protect():
+    if request.method == 'GET' or not request.path.startswith('/admin'):
+        return
+    token = request.headers.get('X-CSRF-Token') or ''
+    if not token:
+        token = request.form.get('_csrf', '')
+    if not token:
+        token = (request.get_json(silent=True) or {}).get('_csrf', '')
+    expected = session.get('csrf_token', '')
+    if not token or not hmac.compare_digest(str(token), str(expected)):
+        if request.path == '/admin':
+            return redirect(url_for('admin_login', error='csrf'))
+        return jsonify({'error': 'Jeton CSRF invalide ou expiré.'}), 403
+
+
+@app.context_processor
+def inject_csrf_token():
+    return {'csrf_token': get_csrf_token()}
+
+
+CSP = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+    "font-src 'self' https://fonts.gstatic.com; "
+    "img-src 'self' data: https://ui-avatars.com; "
+    "frame-src 'self'; "
+    "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; "
+    "connect-src 'self'; upgrade-insecure-requests"
+)
+
+
+@app.after_request
+def add_security_headers(resp):
+    resp.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    resp.headers.setdefault('X-Frame-Options', 'DENY')
+    resp.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    resp.headers.setdefault('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+    resp.headers.setdefault('Content-Security-Policy', CSP)
+    if app.config.get('FORCE_HTTPS'):
+        resp.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    return resp
+
+
+@app.errorhandler(413)
+def request_too_large(e):
+    if request.path.startswith('/admin'):
+        return jsonify({'error': f'Fichier trop volumineux (maximum {MAX_UPLOAD_MB} Mo).'}), 413
+    return jsonify({'error': 'Requête trop volumineuse.'}), 413
+
+
+@app.errorhandler(404)
+def not_found(e):
+    if request.path.startswith(('/admin', '/api')):
+        return jsonify({'error': 'Ressource introuvable.'}), 404
+    return e
+
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    if request.path.startswith(('/admin', '/api')):
+        return jsonify({'error': 'Méthode non autorisée.'}), 405
+    return e
+
+
+def get_admin_email():
+    return (get_config().get('admin_email') or '').strip()
+
+
+def admin_password_valid(email, password):
+    """Vérifie les identifiants admin. Mot de passe stocké hashé (hashé dès la
+    première connexion si la config contient encore un mot de passe en clair)."""
+    expected_email = get_admin_email()
+    if not expected_email or (email or '').strip() != expected_email:
+        return False
+    if not isinstance(password, str) or not password:
+        return False
+    config = get_config()
+    pw_hash = config.get('admin_password_hash') or ''
+    if pw_hash:
+        return check_password_hash(pw_hash, password)
+    legacy = config.get('admin_password')
+    if legacy is None or not isinstance(legacy, str):
+        return False
+    if hmac.compare_digest(str(legacy), str(password)):
+        config['admin_password_hash'] = generate_password_hash(password)
+        config.pop('admin_password', None)
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2)
+        return True
+    return False
+
+
+def validate_upload(file_storage, allowed_ext):
+    """Valide un upload: nom sécurisé, extension autorisée et signature du fichier."""
+    filename = secure_filename(file_storage.filename or '')
+    ext = os.path.splitext(filename)[1].lower()
+    if not ext or ext not in allowed_ext:
+        raise ValueError('extension')
+    file_storage.seek(0)
+    head = file_storage.read(16)
+    file_storage.seek(0)
+    if ext == '.webp':
+        ok = head[:4] == b'RIFF' and head[8:12] == b'WEBP'
+    else:
+        signatures = {
+            '.pdf': b'%PDF',
+            '.jpg': b'\xff\xd8\xff',
+            '.jpeg': b'\xff\xd8\xff',
+            '.png': b'\x89PNG\r\n\x1a\n',
+            '.gif': b'GIF8',
+        }
+        ok = head.startswith(signatures[ext])
+    if not ok:
+        raise ValueError('contenu')
+    return filename, ext
+
 # ---------- ROUTES ----------
 
 @app.route('/')
@@ -449,18 +669,23 @@ def index():
 
 @app.route('/api/contact', methods=['POST'])
 def api_contact():
-    data = request.get_json()
-    nom = data.get('nom', '').strip()
-    email = data.get('email', '').strip()
-    message = data.get('message', '').strip()
+    data = request.get_json(silent=True) or {}
+    nom = str(data.get('nom') or '').strip()[:100]
+    email = str(data.get('email') or '').strip()[:254]
+    message = str(data.get('message') or '').strip()[:5000]
 
     if not nom or not email or not message:
         return jsonify({'error': 'Tous les champs sont requis.'}), 400
+    if not EMAIL_RE.match(email):
+        return jsonify({'error': 'Adresse email invalide.'}), 400
+    if is_rate_limited('contact', client_ip(), 5):
+        return jsonify({'error': 'Trop de messages envoyés. Réessayez plus tard.'}), 429
 
     save_message(nom, email, message)
-    sent, email_status = send_email(nom, email, message)
+    record_attempt('contact', client_ip())
+    sent, _ = send_email(nom, email, message)
 
-    return jsonify({'success': True, 'email_sent': sent, 'email_status': email_status})
+    return jsonify({'success': True, 'email_sent': sent})
 
 @app.route('/api/certs', methods=['GET'])
 def get_certs():
@@ -501,17 +726,30 @@ def get_photo():
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_login():
+    if session.get('admin_logged_in'):
+        return redirect(url_for('admin_dashboard'))
     error = None
+    if request.args.get('error') == 'csrf':
+        error = 'Session expirée, veuillez vous reconnecter.'
     if request.method == 'POST':
-        config = get_config()
-        email = request.form.get('email', '')
-        password = request.form.get('password', '')
-        config_email = config.get('admin_email', '')
-        config_password = config.get('admin_password', 'admin')
-        if email == config_email and password == config_password:
+        email = str(request.form.get('email', ''))
+        password = str(request.form.get('password', ''))
+        ip = client_ip()
+        if is_rate_limited('login', ip, 8):
+            error = 'Trop de tentatives de connexion. Réessayez dans quelques minutes.'
+        elif admin_password_valid(email, password):
+            config = get_config()
+            was_legacy = not (config.get('admin_password_hash') or '')
+            session.clear()
+            session.permanent = True
             session['admin_logged_in'] = True
+            session['csrf_token'] = secrets.token_hex(32)
+            if was_legacy:
+                session['needs_password_change'] = True
+            reset_attempts('login', ip)
             return redirect(url_for('admin_dashboard'))
         else:
+            record_attempt('login', ip)
             error = 'Email ou mot de passe incorrect.'
     return render_template('admin_login.html', error=error)
 
@@ -542,13 +780,32 @@ def admin_dashboard():
         realisations=realisations,
         formations=formations,
         messages=messages, unread_count=unread_count,
-        smtp_configured=bool(config.get('smtp_email') and config.get('smtp_app_password'))
+        smtp_configured=bool(config.get('smtp_email') and config.get('smtp_app_password')),
+        needs_password_change=bool(session.get('needs_password_change'))
     )
 
 @app.route('/admin/logout')
 def admin_logout():
-    session.pop('admin_logged_in', None)
+    session.clear()
     return redirect(url_for('admin_login'))
+
+@app.route('/admin/api/security/password', methods=['POST'])
+@login_required
+def admin_change_password():
+    data = request.get_json(silent=True) or {}
+    current = str(data.get('current_password', '') or '')
+    new_password = str(data.get('new_password', '') or '')
+    if len(new_password) < 10:
+        return jsonify({'error': 'Le mot de passe doit contenir au moins 10 caractères.'}), 400
+    if not admin_password_valid(get_admin_email(), current):
+        return jsonify({'error': 'Mot de passe actuel incorrect.'}), 403
+    config = get_config()
+    config['admin_password_hash'] = generate_password_hash(new_password)
+    config.pop('admin_password', None)
+    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+        json.dump(config, f, indent=2)
+    session.pop('needs_password_change', None)
+    return jsonify({'success': True})
 
 # --- ADMIN API ROUTES ---
 
@@ -560,15 +817,17 @@ def admin_upload_photo():
     file = request.files['photo']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    if file:
-        for f in os.listdir(PHOTO_FOLDER):
-            os.remove(os.path.join(PHOTO_FOLDER, f))
-        delete_records('photo')
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(PHOTO_FOLDER, filename))
-        url = f'/static/uploads/photo/{filename}'
-        record_upload('photo', filename, file.filename, url)
-        return jsonify({'filename': filename, 'url': url})
+    try:
+        filename, _ = validate_upload(file, ALLOWED_IMAGES)
+    except ValueError as e:
+        return jsonify({'error': 'Format non autorisé. Utilisez une image JPG, PNG, GIF ou WebP.'}), 400
+    for f in os.listdir(PHOTO_FOLDER):
+        os.remove(os.path.join(PHOTO_FOLDER, f))
+    delete_records('photo')
+    file.save(os.path.join(PHOTO_FOLDER, filename))
+    url = f'/static/uploads/photo/{filename}'
+    record_upload('photo', filename, file.filename, url)
+    return jsonify({'filename': filename, 'url': url})
 
 @app.route('/admin/api/upload/cert', methods=['POST'])
 @login_required
@@ -578,21 +837,26 @@ def admin_upload_cert():
     file = request.files['cert']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    if file:
-        filename = secure_filename(file.filename)
-        filename = f"{int(time.time())}_{filename}"
-        file.save(os.path.join(CERTS_FOLDER, filename))
-        url = f'/static/uploads/certs/{filename}'
-        record_upload('cert', filename, file.filename, url)
-        return jsonify({'filename': filename, 'url': url})
+    try:
+        filename, _ = validate_upload(file, ALLOWED_DOCS)
+    except ValueError:
+        return jsonify({'error': 'Format non autorisé. Utilisez un PDF ou une image.'}), 400
+    filename = f"{int(time.time())}_{filename}"
+    file.save(os.path.join(CERTS_FOLDER, filename))
+    url = f'/static/uploads/certs/{filename}'
+    record_upload('cert', filename, file.filename, url)
+    return jsonify({'filename': filename, 'url': url})
 
 @app.route('/admin/api/cert/<filename>', methods=['DELETE'])
 @login_required
 def admin_delete_cert(filename):
-    filepath = os.path.join(CERTS_FOLDER, filename)
+    name = os.path.basename(filename)
+    filepath = os.path.join(CERTS_FOLDER, secure_filename(name))
+    if not filepath.startswith(os.path.abspath(CERTS_FOLDER) + os.sep):
+        return jsonify({'error': 'Chemin invalide'}), 400
     if os.path.exists(filepath):
         os.remove(filepath)
-        delete_records('cert', filename)
+        delete_records('cert', name)
         return jsonify({'status': 'deleted'})
     return jsonify({'error': 'Not found'}), 404
 
@@ -604,15 +868,17 @@ def admin_upload_cv():
     file = request.files['cv']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    if file:
-        for f in os.listdir(CV_FOLDER):
-            os.remove(os.path.join(CV_FOLDER, f))
-        delete_records('cv')
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(CV_FOLDER, filename))
-        url = f'/static/uploads/cv/{filename}'
-        record_upload('cv', filename, file.filename, url)
-        return jsonify({'filename': filename, 'url': url})
+    try:
+        filename, _ = validate_upload(file, ALLOWED_DOCS)
+    except ValueError:
+        return jsonify({'error': 'Format non autorisé. Utilisez un PDF ou une image.'}), 400
+    for f in os.listdir(CV_FOLDER):
+        os.remove(os.path.join(CV_FOLDER, f))
+    delete_records('cv')
+    file.save(os.path.join(CV_FOLDER, filename))
+    url = f'/static/uploads/cv/{filename}'
+    record_upload('cv', filename, file.filename, url)
+    return jsonify({'filename': filename, 'url': url})
 
 @app.route('/admin/api/cv', methods=['DELETE'])
 @login_required
@@ -642,9 +908,9 @@ def admin_add_certification():
             if f.filename:
                 file = f
     else:
-        data = request.get_json()
-        title = data.get('title', '').strip()
-        description = data.get('description', '').strip()
+        data = request.get_json(silent=True) or {}
+        title = (data.get('title') or '').strip()
+        description = (data.get('description') or '').strip()
         status = data.get('status', 'obtenue')
     if not title or not description:
         return jsonify({'error': 'Titre et description requis'}), 400
@@ -652,7 +918,11 @@ def admin_add_certification():
         status = 'obtenue'
     cert_id = add_certification(title, description, status)
     if file:
-        ext = os.path.splitext(file.filename)[1] or '.pdf'
+        try:
+            _, ext = validate_upload(file, ALLOWED_DOCS)
+        except ValueError:
+            delete_certification(cert_id)
+            return jsonify({'error': 'Format non autorisé. Utilisez un PDF ou une image.'}), 400
         filename = f"cert_{cert_id}_{int(time.time())}{ext}"
         file.save(os.path.join(CERTIF_FILES_FOLDER, filename))
         url = f'/static/uploads/certifs/{filename}'
@@ -672,9 +942,9 @@ def admin_modify_certification(cert_id):
         delete_certification(cert_id)
         return jsonify({'status': 'deleted'})
 
-    data = request.get_json()
-    title = data.get('title', '').strip()
-    description = data.get('description', '').strip()
+    data = request.get_json(silent=True) or {}
+    title = (data.get('title') or '').strip()
+    description = (data.get('description') or '').strip()
     status = data.get('status', 'obtenue')
     if not title or not description:
         return jsonify({'error': 'Titre et description requis'}), 400
@@ -702,13 +972,16 @@ def admin_certification_file(cert_id):
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
+    try:
+        _, ext = validate_upload(file, ALLOWED_DOCS)
+    except ValueError:
+        return jsonify({'error': 'Format non autorisé. Utilisez un PDF ou une image.'}), 400
     file_url = get_cert_file(cert_id)
     if file_url:
         old = os.path.basename(file_url)
         old_path = os.path.join(CERTIF_FILES_FOLDER, old)
         if os.path.exists(old_path):
             os.remove(old_path)
-    ext = os.path.splitext(file.filename)[1] or '.pdf'
     filename = f"cert_{cert_id}_{int(time.time())}{ext}"
     file.save(os.path.join(CERTIF_FILES_FOLDER, filename))
     url = f'/static/uploads/certifs/{filename}'
@@ -720,13 +993,13 @@ def admin_certification_file(cert_id):
 @app.route('/admin/api/realisations', methods=['POST'])
 @login_required
 def admin_add_realisation():
-    data = request.get_json()
-    title = data.get('title', '').strip()
-    description = data.get('description', '').strip()
-    image = data.get('image', '').strip()
-    code_url = data.get('code_url', '').strip()
-    demo_url = data.get('demo_url', '').strip()
-    tags = data.get('tags', '').strip()
+    data = request.get_json(silent=True) or {}
+    title = (data.get('title') or '').strip()
+    description = (data.get('description') or '').strip()
+    image = (data.get('image') or '').strip()
+    code_url = (data.get('code_url') or '').strip()
+    demo_url = (data.get('demo_url') or '').strip()
+    tags = (data.get('tags') or '').strip()
     if not title or not description:
         return jsonify({'error': 'Titre et description requis'}), 400
     add_realisation(title, description, image, code_url, demo_url, tags)
@@ -739,13 +1012,13 @@ def admin_modify_realisation(rel_id):
         delete_realisation(rel_id)
         return jsonify({'status': 'deleted'})
 
-    data = request.get_json()
-    title = data.get('title', '').strip()
-    description = data.get('description', '').strip()
-    image = data.get('image', '').strip()
-    code_url = data.get('code_url', '').strip()
-    demo_url = data.get('demo_url', '').strip()
-    tags = data.get('tags', '').strip()
+    data = request.get_json(silent=True) or {}
+    title = (data.get('title') or '').strip()
+    description = (data.get('description') or '').strip()
+    image = (data.get('image') or '').strip()
+    code_url = (data.get('code_url') or '').strip()
+    demo_url = (data.get('demo_url') or '').strip()
+    tags = (data.get('tags') or '').strip()
     if not title or not description:
         return jsonify({'error': 'Titre et description requis'}), 400
     update_realisation(rel_id, title, description, image, code_url, demo_url, tags)
@@ -756,10 +1029,10 @@ def admin_modify_realisation(rel_id):
 @app.route('/admin/api/formations', methods=['POST'])
 @login_required
 def admin_add_formation():
-    data = request.get_json()
-    title = data.get('title', '').strip()
-    description = data.get('description', '').strip()
-    institution = data.get('institution', '').strip()
+    data = request.get_json(silent=True) or {}
+    title = (data.get('title') or '').strip()
+    description = (data.get('description') or '').strip()
+    institution = (data.get('institution') or '').strip()
     status = data.get('status', 'en_cours')
     if not title or not description:
         return jsonify({'error': 'Titre et description requis'}), 400
@@ -775,10 +1048,10 @@ def admin_modify_formation(form_id):
         delete_formation(form_id)
         return jsonify({'status': 'deleted'})
 
-    data = request.get_json()
-    title = data.get('title', '').strip()
-    description = data.get('description', '').strip()
-    institution = data.get('institution', '').strip()
+    data = request.get_json(silent=True) or {}
+    title = (data.get('title') or '').strip()
+    description = (data.get('description') or '').strip()
+    institution = (data.get('institution') or '').strip()
     status = data.get('status', 'en_cours')
     if not title or not description:
         return jsonify({'error': 'Titre et description requis'}), 400
@@ -806,10 +1079,10 @@ def admin_delete_message(msg_id):
 @app.route('/admin/api/smtp', methods=['POST'])
 @login_required
 def admin_save_smtp():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     config = get_config()
-    config['smtp_email'] = data.get('smtp_email', config.get('smtp_email', ''))
-    config['smtp_app_password'] = data.get('smtp_app_password', config.get('smtp_app_password', ''))
+    config['smtp_email'] = (data.get('smtp_email') or config.get('smtp_email', '')).strip()
+    config['smtp_app_password'] = (data.get('smtp_app_password') or config.get('smtp_app_password', '')).strip()
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2)
     return jsonify({'success': True})
@@ -834,11 +1107,11 @@ def admin_test_smtp():
         server.ehlo()
         server.login(smtp_email, smtp_pass)
         server.quit()
-        return jsonify({'success': True, 'message': 'Connexion SMTP réussie ! Un email de test va être envoyé.'})
+        return jsonify({'success': True, 'message': 'Connexion SMTP réussie !'})
     except smtplib.SMTPAuthenticationError:
         return jsonify({'success': False, 'message': "Échec d'authentification. Vérifiez l'email et le mot de passe d'application."}), 400
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Erreur: {e}'}), 400
+    except Exception:
+        return jsonify({'success': False, 'message': 'Impossible de se connecter au serveur SMTP.'}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=os.environ.get('FLASK_DEBUG') == '1')

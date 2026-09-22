@@ -24,6 +24,7 @@
       <h2 class="mb-0" style="font-weight: 600;">Administration</h2>
     </div>
     <form method="POST">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}" />
       <div class="mb-3">
         <label class="form-label text-secondary" style="font-size: 0.85rem;">Email</label>
         <input type="email" class="form-control" name="email" placeholder="Votre email" required autofocus />

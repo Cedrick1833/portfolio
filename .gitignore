@@ -1,5 +1,6 @@
 # Secrets et configuration
 config.json
+.secret_key
 
 # Base de données
 *.db
