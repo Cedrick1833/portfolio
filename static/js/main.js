@@ -253,153 +253,45 @@ form.addEventListener('submit', async (e) => {
 /* ============ ANNÉE DU FOOTER ============ */
 document.getElementById('year').textContent = new Date().getFullYear();
 
-/* ============ PHOTO PROFIL (chargement backend) ============ */
-const profilePhoto = document.getElementById('profile-photo');
-fetch('/api/photo').then(r => r.json()).then(data => {
-  if (data.url) {
-    profilePhoto.src = data.url + '?t=' + new Date().getTime();
-  }
-}).catch(() => {});
-
-/* ============ CV MODAL (VIEW ONLY) ============ */
+/* ============ CV MODAL (instantané, données injectées par le serveur) ============ */
 const cvModal = new bootstrap.Modal(document.getElementById('cvModal'));
-document.getElementById('view-cv-btn').addEventListener('click', async () => {
+const viewCVBtn = document.getElementById('view-cv-btn');
+viewCVBtn.addEventListener('click', () => {
   cvModal.show();
-  await loadCV();
+  loadCV();
 });
 
 const cvIframe = document.getElementById('cv-iframe');
 const cvImage = document.getElementById('cv-image');
 const cvImageWrap = document.getElementById('cv-image-wrap');
 const cvEmpty = document.getElementById('cv-empty');
-const cvPdfWrap = document.getElementById('cv-pdf-wrap');
 
-async function loadCV() {
-  const res = await fetch('/api/cv');
-  const data = await res.json();
+function loadCV() {
+  const url = viewCVBtn.dataset.cvUrl;
+  let name = (viewCVBtn.dataset.cvName || '').toLowerCase();
 
   cvIframe.style.display = 'none';
   cvImageWrap.style.display = 'none';
-  cvEmpty.style.display = 'none';
-  cvPdfWrap.style.display = 'none';
 
-  if (!data.url) {
+  if (!url) {
     cvEmpty.style.display = 'flex';
     return;
   }
 
-  const url = data.url + '?t=' + new Date().getTime();
-  const isPdf = data.filename.endsWith('.pdf');
-
-  if (isPdf) {
-    if (window.pdfjsLib) {
-      cvPdfWrap.style.display = 'block';
-      loadPdf('cv', url);
-    } else {
-      cvIframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0';
-      cvIframe.style.display = 'block';
-    }
-  } else {
+  if (name.endsWith('.pdf')) {
+    cvIframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0';
+    cvIframe.style.display = 'block';
+  } else if (/\.(jpe?g|png|gif|webp|svg)$/.test(name)) {
+    cvEmpty.style.display = 'none';
     cvImage.src = url;
     cvImageWrap.style.display = 'block';
-  }
-}
-
-/* ============ VISIONNEUSE PDF (canvas) ============ */
-if (window.pdfjsLib) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-}
-
-const pdfViewers = {
-  cert: {
-    wrap: document.getElementById('cert-pdf-wrap'),
-    canvas: document.getElementById('cert-pdf-canvas'),
-    pageInfo: document.getElementById('cert-pdf-pageinfo'),
-    pdf: null,
-    page: 1,
-    fit: 'width'
-  },
-  cv: {
-    wrap: cvPdfWrap,
-    canvas: document.getElementById('cv-pdf-canvas'),
-    pageInfo: document.getElementById('cv-pdf-pageinfo'),
-    pdf: null,
-    page: 1,
-    fit: 'height'
-  }
-};
-
-async function loadPdf(key, url) {
-  const v = pdfViewers[key];
-  if (v.pdf) {
-    v.pdf.destroy();
-    v.pdf = null;
-  }
-  if (!window.pdfjsLib) return;
-  try {
-    const loadingTask = pdfjsLib.getDocument(url);
-    v.pdf = await loadingTask.promise;
-    v.page = 1;
-    await renderPdfPage(key);
-    v.pageInfo.textContent = '1 / ' + v.pdf.numPages;
-  } catch (err) {
-    console.error('Erreur de chargement PDF', err);
-    v.pdf = null;
-    v.wrap.style.display = 'none';
-  }
-}
-
-async function renderPdfPage(key) {
-  const v = pdfViewers[key];
-  if (!v.pdf) return;
-  const doc = v.pdf;
-  if (v.page < 1) v.page = 1;
-  if (v.page > doc.numPages) v.page = doc.numPages;
-
-  const page = await doc.getPage(v.page);
-  const base = page.getViewport({ scale: 1 });
-  const scrollEl = v.canvas.parentElement;
-  const pad = 28;
-  let availW = (scrollEl.clientWidth || window.innerWidth) - pad;
-  let availH = (scrollEl.clientHeight || 500) - pad;
-  let scale;
-  if (v.fit === 'height') {
-    scale = availH / base.height;
-    if (availW > 0) scale = Math.min(scale, availW / base.width);
-    scale = Math.max(scale, 0.2);
+    return;
   } else {
-    scale = availW / base.width;
-    scale = Math.max(scale, 0.4);
+    cvEmpty.style.display = 'flex';
   }
-  scale = Math.min(scale, 3);
-  const viewport = page.getViewport({ scale });
-
-  const canvas = v.canvas;
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.floor(viewport.width * dpr);
-  canvas.height = Math.floor(viewport.height * dpr);
-  canvas.style.width = viewport.width + 'px';
-  canvas.style.height = viewport.height + 'px';
-
-  const ctx = canvas.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  await page.render({ canvasContext: ctx, viewport }).promise;
-  v.pageInfo.textContent = v.page + ' / ' + doc.numPages;
 }
 
-document.querySelectorAll('.pdf-page-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const v = pdfViewers[btn.dataset.pdfkey];
-    if (!v.pdf) return;
-    const dir = parseInt(btn.dataset.dir, 10);
-    const next = v.page + dir;
-    if (next < 1 || next > v.pdf.numPages) return;
-    v.page = next;
-    renderPdfPage(btn.dataset.pdfkey);
-  });
-});
-
-/* ============ CERTIFICATIONS GRID (dynamique) ============ */
+/* ============ CERTIFICATIONS GRID (instantané, données injectées par le serveur) ============ */
 const certsGrid = document.getElementById('certs-grid');
 const certModal = new bootstrap.Modal(document.getElementById('certModal'));
 const certIframe = document.getElementById('cert-iframe');
@@ -431,35 +323,28 @@ async function loadCertsGrid(certifications, silent) {
   obtained.forEach((cert) => {
     const hasFile = !!(cert.file_url);
     const isPdf = hasFile ? cert.file_url.toLowerCase().endsWith('.pdf') : false;
-    const urlStamp = hasFile ? cert.file_url + '?t=' + Date.now() : '';
+    const urlStamp = hasFile ? (cert.file_url_v || cert.file_url) : '';
     const cardClass = silent ? 'cert-dynamic-card reveal visible' : 'cert-dynamic-card reveal';
 
     const col = document.createElement('div');
     col.className = 'col-md-6 col-lg-4';
     col.innerHTML = `
-      <article class="${cardClass}" style="animation-delay: ${index * 0.1}s">
+      <article class="${cardClass}" style="animation-delay: ${index * 0.1}s" data-file-url="${hasFile ? escapeHtml(urlStamp) : ''}" data-file-title="${escapeHtml(cert.title)}">
         <div class="cert-visual">
           ${hasFile
             ? isPdf
               ? '<div class="cert-preview-placeholder"><span class="cert-preview-icon">📄</span><span class="cert-preview-label">PDF</span></div>'
-              : `<img src="${urlStamp}" alt="${cert.title}" />`
+              : `<img src="${urlStamp}" alt="${escapeHtml(cert.title)}" />`
             : '<div class="cert-preview-placeholder"><span class="cert-preview-icon">🏆</span><span class="cert-preview-label">Obtenue</span></div>'
           }
           ${hasFile ? '<div class="cert-overlay"><span class="btn btn-primary btn-small cert-view-btn">Voir le certificat</span></div>' : ''}
         </div>
         <div class="cert-info-bar">
-          <h4>${cert.title}</h4>
+          <h4>${escapeHtml(cert.title)}</h4>
           <span class="cert-type-badge">${hasFile ? (isPdf ? 'PDF' : 'Image') : 'Obtenue'}</span>
         </div>
       </article>
     `;
-
-    if (hasFile) {
-      const viewBtn = col.querySelector('.cert-view-btn');
-      viewBtn.addEventListener('click', () => openCertModal({ filename: cert.file_url.split('/').pop(), url: cert.file_url, original_name: cert.title }, cert.title));
-      const card = col.querySelector('.cert-dynamic-card');
-      card.addEventListener('click', () => openCertModal({ filename: cert.file_url.split('/').pop(), url: cert.file_url, original_name: cert.title }, cert.title));
-    }
 
     certsGrid.appendChild(col);
     index++;
@@ -494,8 +379,8 @@ async function loadCertsProgress(certifications, silent) {
       <article class="${cardClass}" style="animation-delay: ${index * 0.1}s">
         <div class="cert-progress-icon">⏳</div>
         <div class="cert-progress-body">
-          <h4>${cert.title}</h4>
-          <p>${cert.description}</p>
+          <h4>${escapeHtml(cert.title)}</h4>
+          <p>${escapeHtml(cert.description)}</p>
           <span class="cert-progress-status">En cours</span>
         </div>
       </article>
@@ -509,38 +394,43 @@ async function loadCertsProgress(certifications, silent) {
 }
 
 function openCertModal(file, displayName) {
-  const isPdf = file.filename.endsWith('.pdf');
+  const name = (file.filename || '').toLowerCase();
+  const isPdf = name.endsWith('.pdf');
+  const isImage = /\.(jpe?g|png|gif|webp|svg)$/.test(name);
   certModalTitle.textContent = displayName;
 
   certIframe.style.display = 'none';
   certImageWrap.style.display = 'none';
   certEmpty.style.display = 'none';
-  pdfViewers.cert.wrap.style.display = 'none';
-
-  const url = file.url + '?t=' + new Date().getTime();
 
   if (isPdf) {
-    if (window.pdfjsLib) {
-      pdfViewers.cert.wrap.style.display = 'block';
-      loadPdf('cert', url);
-    } else {
-      certIframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0';
-      certIframe.style.display = 'block';
-    }
-  } else {
-    certImage.src = url;
+    certIframe.src = file.url + '#toolbar=0&navpanes=0&scrollbar=0';
+    certIframe.style.display = 'block';
+  } else if (isImage) {
+    certImage.src = file.url;
     certImageWrap.style.display = 'block';
+  } else {
+    certEmpty.style.display = 'flex';
   }
 
   certModal.show();
 }
 
-let certsCacheKey = '';
+/* Clics sur les cartes (les cartes servies par le serveur portent déjà les données) */
+certsGrid.addEventListener('click', (e) => {
+  const card = e.target.closest('.cert-dynamic-card');
+  if (!card || !card.dataset.fileUrl) return;
+  const title = card.dataset.fileTitle || 'Certification';
+  const filename = card.dataset.fileUrl.split('?')[0].split('/').pop();
+  openCertModal({ filename, url: card.dataset.fileUrl, original_name: title }, title);
+});
 
-async function initCertsGrid() {
-  const data = await fetchCertifications();
-  certsCacheKey = JSON.stringify(data);
-  await Promise.all([loadCertsGrid(data, false), loadCertsProgress(data, false)]);
+const certsDataEl = document.getElementById('certs-data');
+let certsCacheKey = '';
+if (certsDataEl && certsDataEl.textContent.trim()) {
+  try {
+    certsCacheKey = JSON.stringify(JSON.parse(certsDataEl.textContent));
+  } catch (e) {}
 }
 
 async function autoRefreshCerts() {
@@ -552,8 +442,6 @@ async function autoRefreshCerts() {
     await Promise.all([loadCertsGrid(data, true), loadCertsProgress(data, true)]);
   } catch (e) {}
 }
-
-initCertsGrid();
 
 setInterval(autoRefreshCerts, 25000);
 document.addEventListener('visibilitychange', () => {
@@ -653,3 +541,28 @@ async function loadFormations() {
 
 loadRealisations();
 loadFormations();
+
+/* ============ PRÉCHARGEMENT CV + CERTIFICATS (affichage instantané) ============ */
+function preloadFile(url) {
+  if (!url) return;
+  if (/\.(jpe?g|png|gif|webp|svg)$/i.test(url.split('?')[0])) {
+    const img = new Image();
+    img.src = url;
+    return;
+  }
+  fetch(url, { cache: 'default', priority: 'low', mode: 'same-origin' }).catch(() => {});
+}
+
+function preloadDocs() {
+  preloadFile(viewCVBtn.dataset.cvUrl || '');
+
+  document.querySelectorAll('.cert-dynamic-card[data-file-url]').forEach((card) => {
+    preloadFile(card.dataset.fileUrl);
+  });
+}
+
+if (document.readyState === 'complete') {
+  preloadDocs();
+} else {
+  window.addEventListener('load', preloadDocs);
+}

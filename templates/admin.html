@@ -550,7 +550,7 @@
             <div class="d-flex align-items-center gap-2">
               <button class="btn-admin-outline" onclick="uploadCertFile({{ cert.id }})">{{ 'Remplacer' if cert.file_url else 'Joindre' }} fichier</button>
               {% if cert.file_url %}
-              <a class="btn-admin-outline" href="{{ cert.file_url }}" target="_blank">Voir</a>
+              <a class="btn-admin-outline" href="{{ cert.file_url_v or cert.file_url }}" target="_blank">Voir</a>
               <button class="btn-danger-outline" onclick="removeCertFile({{ cert.id }})">Retirer</button>
               {% endif %}
               <button class="btn-admin-outline" onclick="beginEditCert({{ cert.id }})">Modifier</button>

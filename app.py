@@ -20,13 +20,16 @@ DATABASE = os.path.join(BASE_DIR, 'portfolio.db')
 
 @app.after_request
 def add_no_cache(resp):
-    """Empêche le cache navigateur sur les ressources qui changent au fil des mises à jour admin."""
+    """Empêche le cache navigateur sur le HTML (mises à jour admin visibles à chaque visite).
+    Le CSS/JS versionnés (?v=) sont mis en cache pour un affichage rapide."""
     if resp.content_type and 'text/html' in resp.content_type:
         resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    elif resp.content_type and 'javascript' in resp.content_type:
-        resp.headers['Cache-Control'] = 'no-cache, max-age=0, must-revalidate'
-    elif resp.content_type and 'text/css' in resp.content_type:
-        resp.headers['Cache-Control'] = 'no-cache, max-age=0, must-revalidate'
+    elif resp.content_type and ('javascript' in resp.content_type or 'text/css' in resp.content_type):
+        resp.headers['Cache-Control'] = 'public, max-age=3600'
+    elif request.path.startswith('/static/uploads/'):
+        # Les fichiers uploadés sont versionnés (?v=mtime) : un cache long,
+        # fiable et immuable rend l'affichage du CV et des certificats instantané.
+        resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
     return resp
 
 UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
@@ -207,6 +210,22 @@ def get_uploads(category):
     ).fetchall()
     return [dict(row) for row in rows]
 
+def versioned_url(url):
+    """Renvoie l'URL avec ?v= basé sur la date de modification du fichier.
+    Un URL stable tant que le fichier ne change pas => le navigateur le met en
+    cache et l'affichage du CV / certificats devient instantané."""
+    if not url:
+        return url
+    base = url.split('?')[0]
+    if not base.startswith('/static/'):
+        return url
+    try:
+        fs_path = os.path.join(BASE_DIR, base.lstrip('/').replace('/', os.sep))
+        version = int(os.path.getmtime(fs_path) * 1000)
+    except OSError:
+        version = 0
+    return f"{base}?v={version}"
+
 # --- CERTIFICATIONS DB ---
 
 def add_certification(title, description, status):
@@ -227,7 +246,10 @@ def delete_certification(cert_id):
 def get_certifications():
     db = get_db()
     rows = db.execute('SELECT * FROM certifications ORDER BY id DESC').fetchall()
-    return [dict(row) for row in rows]
+    certifications = [dict(row) for row in rows]
+    for cert in certifications:
+        cert['file_url_v'] = versioned_url(cert.get('file_url') or '')
+    return certifications
 
 def update_certification(cert_id, title, description, status):
     db = get_db()
@@ -398,16 +420,29 @@ def login_required(f):
 
 @app.route('/')
 def index():
-    cert_db = get_certifications()
-    certifications_count = len(cert_db)
+    certifications = get_certifications()
+    certifications_count = len(certifications)
+    formations = get_formations()
     realisations_count = len(get_realisations())
-    formations_count = len(get_formations())
+    formations_count = len(formations)
+
+    cv_list = get_uploads('cv')
+    cv_url = versioned_url(cv_list[0]['url']) if cv_list else ''
+    cv_name = cv_list[0]['filename'] if cv_list else ''
+
+    photo_list = get_uploads('photo')
+    photo_url = versioned_url(photo_list[0]['url']) if photo_list else ''
+
     return render_template(
         'index.html',
-        formations=get_formations(),
+        certifications=certifications,
+        formations=formations,
         certifications_count=certifications_count,
         realisations_count=realisations_count,
         formations_count=formations_count,
+        cv_url=cv_url,
+        cv_name=cv_name,
+        photo_url=photo_url,
     )
 
 # --- PUBLIC API ---
@@ -451,7 +486,7 @@ def get_cv():
     cv_list = get_uploads('cv')
     if cv_list:
         c = cv_list[0]
-        return jsonify({'filename': c['filename'], 'url': c['url']})
+        return jsonify({'filename': c['filename'], 'url': versioned_url(c['url'])})
     return jsonify({})
 
 @app.route('/api/photo', methods=['GET'])
